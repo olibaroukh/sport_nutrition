@@ -193,6 +193,28 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .hydration-time{font-family:var(--font-mono);font-size:11px;color:var(--muted);min-width:44px;flex-shrink:0}
 .hydration-qty{font-family:var(--font-mono);font-size:12px;color:var(--info);min-width:44px;flex-shrink:0}
 .hydration-note{font-size:12px;color:var(--muted)}
+.mode-btn{padding:7px 14px;font-size:12px;font-family:var(--font-mono);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--bg3);color:var(--muted);transition:all .15s}
+.mode-btn:hover{border-color:var(--border2);color:var(--text)}
+.mode-btn.active-mode{background:var(--accent);color:#0e0f0d;border-color:var(--accent);font-weight:500}
+.journal-meal-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s;user-select:none}
+.journal-meal-row:hover{border-color:var(--border2)}
+.journal-meal-row.eaten{border-color:#c8f06e44;background:rgba(200,240,110,.04)}
+.journal-check{width:20px;height:20px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.journal-meal-row.eaten .journal-check{background:var(--accent);border-color:var(--accent)}
+.journal-check-inner{display:none;color:#0e0f0d;font-size:12px;font-weight:700}
+.journal-meal-row.eaten .journal-check-inner{display:block}
+.macro-bar-wrap{margin-bottom:16px}
+.macro-bar-row{margin-bottom:10px}
+.macro-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.macro-bar-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.macro-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.forme-entry{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px}
+.forme-score-badge{font-family:var(--font-mono);font-size:18px;font-weight:500;min-width:34px;text-align:center}
+.alt-btns{display:flex;gap:6px;margin-top:8px}
+.alt-btn{padding:4px 10px;font-size:11px;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;color:var(--muted);background:transparent;transition:all .15s;font-family:var(--font-mono)}
+.alt-btn:hover{color:var(--accent);border-color:var(--accent)}
+.alt-response{margin-top:10px;padding:12px 14px;background:var(--bg3);border-radius:var(--r);font-size:13px;color:var(--muted);line-height:1.7;border-left:2px solid var(--accent)}
+.alt-response strong{color:var(--text)}
 .plan-updated-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(200,240,110,.12);border:1px solid #c8f06e44;border-radius:20px;font-size:11px;color:var(--accent);font-family:var(--font-mono);margin-top:8px}
 @media(max-width:768px){
   .app{grid-template-columns:1fr}
@@ -227,6 +249,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="nav-section">Info</div>
     <div class="nav-item" onclick="showSection('suppl',this)"><span class="nav-icon">💊</span> Compléments</div>
     <div class="nav-section">Suivi</div>
+    <div class="nav-item" onclick="showSection('journal',this)"><span class="nav-icon">📋</span> Journal</div>
+    <div class="nav-item" onclick="showSection('forme',this)"><span class="nav-icon">😴</span> Forme</div>
     <div class="nav-item" onclick="showSection('weight',this)"><span class="nav-icon">⚖️</span> Poids</div>
     <div class="nav-item" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Paramètres</div>
   </nav>
@@ -320,6 +344,93 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="page-desc">7j/7 · Adapté à l'entraînement intensif</div>
   </div>
   <div style="padding:32px 40px"><div id="suppl-list"></div></div>
+</section>
+
+<!-- JOURNAL ALIMENTAIRE -->
+<section class="section" id="section-journal" style="padding:0">
+  <div class="page-header">
+    <div class="page-tag">06 — Journal</div>
+    <div class="page-title">Journal alimentaire</div>
+    <div class="page-desc">Coche les repas consommés · Macros en temps réel vs objectif</div>
+  </div>
+  <div style="padding:32px 40px">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:24px;flex-wrap:wrap">
+      <input type="date" id="journal-date" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px">
+      <button onclick="journalPrevDay()" style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:14px">←</button>
+      <button onclick="journalNextDay()" style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:14px">→</button>
+      <span id="journal-day-label" style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text)"></span>
+    </div>
+    <div id="journal-macros-bar" style="margin-bottom:24px"></div>
+    <div id="journal-meals" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div style="margin-top:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px">
+      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;margin-bottom:10px">+ Ajouter un aliment libre</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Aliment</label>
+          <input type="text" id="free-food-name" placeholder="ex: yaourt nature 150g" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;width:200px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Kcal</label>
+          <input type="number" id="free-food-kcal" placeholder="150" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;width:80px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">P(g)</label>
+          <input type="number" id="free-food-p" placeholder="12" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;width:70px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">G(g)</label>
+          <input type="number" id="free-food-g" placeholder="18" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;width:70px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">L(g)</label>
+          <input type="number" id="free-food-l" placeholder="5" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;width:70px">
+        </div>
+        <button onclick="addFreeFood()" style="padding:8px 16px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:13px">+ Ajouter</button>
+      </div>
+      <div id="free-foods-list" style="margin-top:10px;display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- INDICE DE FORME -->
+<section class="section" id="section-forme" style="padding:0">
+  <div class="page-header">
+    <div class="page-tag">07 — Forme</div>
+    <div class="page-title">Indice de forme</div>
+    <div class="page-desc">3 questions le matin · Croisé avec poids et performances</div>
+  </div>
+  <div style="padding:32px 40px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">Bilan du jour — <span id="forme-date-label" style="color:var(--muted);font-weight:400;font-size:13px"></span></div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px">⚡ Énergie</span><span id="val-energie" style="font-family:var(--font-mono);font-size:13px;color:var(--accent)">3</span></div>
+          <input type="range" id="slider-energie" min="1" max="5" value="3" oninput="updateSlider('energie')" style="width:100%;accent-color:var(--accent)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--font-mono)"><span>épuisé</span><span>normal</span><span>excellent</span></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px">🌙 Sommeil</span><span id="val-sommeil" style="font-family:var(--font-mono);font-size:13px;color:var(--info)">3</span></div>
+          <input type="range" id="slider-sommeil" min="1" max="5" value="3" oninput="updateSlider('sommeil')" style="width:100%;accent-color:var(--info)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--font-mono)"><span>mauvais</span><span>correct</span><span>parfait</span></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px">💪 Récupération musculaire</span><span id="val-recup" style="font-family:var(--font-mono);font-size:13px;color:var(--parve)">3</span></div>
+          <input type="range" id="slider-recup" min="1" max="5" value="3" oninput="updateSlider('recup')" style="width:100%;accent-color:var(--parve)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--font-mono)"><span>courbatures</span><span>correct</span><span>frais</span></div>
+        </div>
+      </div>
+      <div id="forme-score-display" style="margin-top:16px;padding:12px 16px;background:var(--bg3);border-radius:var(--r);display:flex;align-items:center;gap:14px">
+        <div id="forme-score-num" style="font-family:var(--font-mono);font-size:32px;font-weight:500;color:var(--accent)">5.0</div>
+        <div>
+          <div id="forme-score-label" style="font-size:13px;font-weight:600;color:var(--text)">Forme correcte</div>
+          <div id="forme-score-advice" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <textarea id="forme-note" placeholder="Note libre (optionnel) — humeur, douleur particulière, remarque..." style="width:100%;margin-top:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:60px;line-height:1.6"></textarea>
+      <button onclick="saveFormeEntry()" style="margin-top:10px;padding:9px 20px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">Sauvegarder</button>
+    </div>
+    <div id="forme-history" style="margin-top:4px"></div>
+  </div>
 </section>
 
 <!-- POIDS -->
@@ -487,8 +598,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">🤖 Cas particuliers — Demander à Claude</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">Pour les situations ponctuelles : vacances, déplacement, blessure, semaine de compétition, invitation...</div>
-      <textarea id="ai-context" placeholder="Ex: Je pars 5 jours à New York la semaine prochaine, pas de cuisine, restaurants américains uniquement..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:80px;line-height:1.6"></textarea>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">Vacances, déplacement, blessure, semaine de compétition...</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button onclick="setClaudeMode('text')" id="mode-text-btn" class="mode-btn active-mode">✍️ Texte libre</button>
+        <button onclick="setClaudeMode('menu')" id="mode-menu-btn" class="mode-btn">📷 Analyser un menu</button>
+      </div>
+
+      <div id="claude-text-mode">
+        <textarea id="ai-context" placeholder="Ex: Je pars 5 jours à New York, pas de cuisine, restaurants américains uniquement..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:80px;line-height:1.6"></textarea>
+      </div>
+
+      <div id="claude-menu-mode" style="display:none">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Prends en photo le menu ou la carte du restaurant. Claude analyse les plats et te recommande le meilleur choix selon ton objectif et ton régime.</div>
+        <div id="menu-photo-drop" onclick="document.getElementById('menu-photo-input').click()" style="border:1.5px dashed var(--border2);border-radius:var(--r2);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg3)" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+          <div style="font-size:28px;margin-bottom:8px">📷</div>
+          <div style="font-size:13px;color:var(--muted)">Clique pour sélectionner une photo<br><span style="font-size:11px;font-family:var(--font-mono)">JPG, PNG — depuis ta galerie ou appareil photo</span></div>
+        </div>
+        <input type="file" id="menu-photo-input" accept="image/*" capture="environment" style="display:none" onchange="previewMenuPhoto(this)">
+        <div id="menu-photo-preview" style="margin-top:10px;display:none">
+          <img id="menu-photo-img" style="max-width:100%;max-height:300px;border-radius:var(--r);border:1px solid var(--border);object-fit:contain">
+          <button onclick="clearMenuPhoto()" style="margin-top:6px;padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:12px">✕ Supprimer</button>
+        </div>
+        <textarea id="menu-context" placeholder="Contexte optionnel — ex: dîner d'affaires, restaurant japonais, je ne mange pas de poisson ce soir..." style="width:100%;margin-top:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;resize:vertical;min-height:60px;line-height:1.6"></textarea>
+      </div>
+
       <button onclick="askClaude()" id="ai-btn" style="margin-top:10px;padding:10px 22px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">✦ Demander à Claude</button>
       <div id="ai-response" style="margin-top:16px;display:none"></div>
     </div>
@@ -1297,6 +1431,11 @@ function renderPlan() {
                 <span class="macro macro-l">L ${m.l}g</span>
               </div>` : ''}
               ${m.recipe ? `<button class="recipe-btn" onclick="openRecipe('${m.recipe}')">🍳 Voir la recette</button>` : ''}
+              <div class="alt-btns">
+                <button class="alt-btn" onclick="getAltMeal(event,'express','${key}',${i})">⚡ Version express</button>
+                <button class="alt-btn" onclick="getAltMeal(event,'restaurant','${key}',${i})">🍽️ Version restaurant</button>
+              </div>
+              <div id="alt-${key}-${i}" style="display:none" class="alt-response"></div>
             </div>
           </div>`).join('')}
       </div>
@@ -1729,8 +1868,306 @@ function calcAndApply() {
 }
 
 // ============================================================
-// CLAUDE AI
+// JOURNAL ALIMENTAIRE
 // ============================================================
+
+function getJournalKey(date) { return 'journal_' + date; }
+
+function journalDateToKey(d) {
+  const days = ['dim','lun','mar','mer','jeu','ven','sam'];
+  return days[d.getDay()];
+}
+
+function renderJournal() {
+  const dateEl = document.getElementById('journal-date');
+  const date = dateEl.value;
+  const dayKey = journalDateToKey(new Date(date + 'T12:00:00'));
+  const day = CURRENT_PLAN ? CURRENT_PLAN[dayKey] : null;
+  const p = getProfile();
+
+  // Day label
+  const dateObj = new Date(date + 'T12:00:00');
+  document.getElementById('journal-day-label').textContent =
+    dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+
+  const saved = JSON.parse(localStorage.getItem(getJournalKey(date)) || '{"eaten":{},"free":[]}');
+
+  // Targets
+  const cfg = OBJ_CONFIG[p.objective] || OBJ_CONFIG.seche;
+  const tdee = calcTDEE(p);
+  const targetKcal = Math.round(tdee - (cfg.defMin + cfg.defMax) / 2);
+  const targetP = Math.round(p.weight * cfg.protFactor);
+  const targetG = Math.round(p.weight * 1.5 * cfg.carbFactor);
+  const targetL = Math.round(p.weight * 0.7 * cfg.fatFactor);
+
+  // Calculate consumed
+  const meals = day ? day.meals : [];
+  let totalP = 0, totalG = 0, totalL = 0, totalKcal = 0;
+  meals.forEach((m, i) => {
+    if (saved.eaten[i]) {
+      totalP += m.p || 0; totalG += m.g || 0;
+      totalL += m.l || 0; totalKcal += m.kcal || 0;
+    }
+  });
+  (saved.free || []).forEach(f => {
+    totalP += f.p || 0; totalG += f.g || 0;
+    totalL += f.l || 0; totalKcal += f.kcal || 0;
+  });
+
+  // Macros bar
+  const macroBar = document.getElementById('journal-macros-bar');
+  const pct = (v, t) => Math.min(100, Math.round(v / Math.max(t, 1) * 100));
+  const color = (v, t) => v >= t ? 'var(--parve)' : v >= t * 0.7 ? 'var(--warn)' : 'var(--danger)';
+  macroBar.innerHTML = `
+    <div class="macro-bar-wrap">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+        <div class="total-card accent"><div class="total-val">${totalKcal}</div><div class="total-lbl">/ ${targetKcal} kcal</div></div>
+        <div class="total-card"><div class="total-val" style="color:var(--info)">${totalP}g</div><div class="total-lbl">/ ${targetP}g prot.</div></div>
+        <div class="total-card"><div class="total-val" style="color:var(--warn)">${totalG}g</div><div class="total-lbl">/ ${targetG}g gluc.</div></div>
+        <div class="total-card"><div class="total-val" style="color:var(--parve)">${totalL}g</div><div class="total-lbl">/ ${targetL}g lip.</div></div>
+      </div>
+      ${[
+        {label:'Protéines', v:totalP, t:targetP, c:'var(--info)'},
+        {label:'Glucides',  v:totalG, t:targetG, c:'var(--warn)'},
+        {label:'Lipides',   v:totalL, t:targetL, c:'var(--parve)'},
+        {label:'Calories',  v:totalKcal, t:targetKcal, c:'var(--accent)'},
+      ].map(b => `<div class="macro-bar-row">
+        <div class="macro-bar-label"><span style="color:var(--muted);font-size:12px">${b.label}</span><span style="font-family:var(--font-mono);font-size:11px;color:${color(b.v,b.t)}">${pct(b.v,b.t)}%</span></div>
+        <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct(b.v,b.t)}%;background:${b.c}"></div></div>
+      </div>`).join('')}
+    </div>`;
+
+  // Meal list
+  const mealsCont = document.getElementById('journal-meals');
+  if (!meals.length) {
+    mealsCont.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Aucun repas planifié pour ce jour.<br>Recalcule le plan dans les paramètres.</div>';
+  } else {
+    mealsCont.innerHTML = meals.map((m, i) => `
+      <div class="journal-meal-row${saved.eaten[i] ? ' eaten' : ''}" onclick="toggleJournalMeal('${date}',${i})">
+        <div class="journal-check"><span class="journal-check-inner">✓</span></div>
+        <span class="meal-type-dot dot-${m.type}" style="flex-shrink:0"></span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);min-width:44px">${m.time}</span>
+        <span style="font-size:13px;font-weight:500;flex:1">${m.name}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${m.kcal} kcal · P${m.p}g</span>
+      </div>`).join('');
+  }
+
+  // Free foods
+  renderFreeFoods(date, saved);
+}
+
+function toggleJournalMeal(date, i) {
+  const saved = JSON.parse(localStorage.getItem(getJournalKey(date)) || '{"eaten":{},"free":[]}');
+  saved.eaten[i] = !saved.eaten[i];
+  localStorage.setItem(getJournalKey(date), JSON.stringify(saved));
+  renderJournal();
+}
+
+function addFreeFood() {
+  const name  = document.getElementById('free-food-name').value.trim();
+  const kcal  = parseInt(document.getElementById('free-food-kcal').value) || 0;
+  const p     = parseInt(document.getElementById('free-food-p').value) || 0;
+  const g     = parseInt(document.getElementById('free-food-g').value) || 0;
+  const l     = parseInt(document.getElementById('free-food-l').value) || 0;
+  if (!name) { alert('Donne un nom à cet aliment.'); return; }
+  const date = document.getElementById('journal-date').value;
+  const saved = JSON.parse(localStorage.getItem(getJournalKey(date)) || '{"eaten":{},"free":[]}');
+  saved.free = saved.free || [];
+  saved.free.push({name, kcal, p, g, l});
+  localStorage.setItem(getJournalKey(date), JSON.stringify(saved));
+  ['free-food-name','free-food-kcal','free-food-p','free-food-g','free-food-l'].forEach(id => document.getElementById(id).value = '');
+  renderJournal();
+}
+
+function renderFreeFoods(date, saved) {
+  const cont = document.getElementById('free-foods-list');
+  if (!cont) return;
+  const free = saved.free || [];
+  if (!free.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = free.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg3);border-radius:var(--r)">
+      <span style="font-size:13px;flex:1">${f.name}</span>
+      <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${f.kcal} kcal · P${f.p} G${f.g} L${f.l}</span>
+      <span onclick="removeFreeFood('${date}',${i})" style="cursor:pointer;color:var(--muted);font-size:12px;padding:2px 6px;border-radius:3px" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">✕</span>
+    </div>`).join('');
+}
+
+function removeFreeFood(date, i) {
+  const saved = JSON.parse(localStorage.getItem(getJournalKey(date)) || '{"eaten":{},"free":[]}');
+  saved.free.splice(i, 1);
+  localStorage.setItem(getJournalKey(date), JSON.stringify(saved));
+  renderJournal();
+}
+
+function journalPrevDay() {
+  const el = document.getElementById('journal-date');
+  const d = new Date(el.value + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  el.value = d.toISOString().split('T')[0];
+  renderJournal();
+}
+function journalNextDay() {
+  const el = document.getElementById('journal-date');
+  const d = new Date(el.value + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  el.value = d.toISOString().split('T')[0];
+  renderJournal();
+}
+
+// ============================================================
+// INDICE DE FORME
+// ============================================================
+
+function updateSlider(name) {
+  const val = document.getElementById('slider-' + name).value;
+  document.getElementById('val-' + name).textContent = val;
+  updateFormeScore();
+}
+
+function updateFormeScore() {
+  const e = parseInt(document.getElementById('slider-energie').value);
+  const s = parseInt(document.getElementById('slider-sommeil').value);
+  const r = parseInt(document.getElementById('slider-recup').value);
+  const score = ((e + s + r) / 3).toFixed(1);
+  document.getElementById('forme-score-num').textContent = score;
+  const labels = [
+    {min:4.5, label:'Forme excellente 🔥', advice:'Séance intensive conseillée. Pousse les charges.', color:'var(--accent)'},
+    {min:3.5, label:'Bonne forme', advice:'Entraînement normal. Respecte le programme.', color:'var(--parve)'},
+    {min:2.5, label:'Forme correcte', advice:'Écoute ton corps. Réduis l\'intensité si besoin.', color:'var(--warn)'},
+    {min:1.5, label:'Fatigue notable', advice:'Séance légère ou récupération active. Priorité au sommeil.', color:'var(--warn)'},
+    {min:0,   label:'Épuisement — repos', advice:'Ne t\'entraîne pas. Récupération prioritaire. Vérifie nutrition et sommeil.', color:'var(--danger)'},
+  ];
+  const l = labels.find(x => parseFloat(score) >= x.min);
+  document.getElementById('forme-score-num').style.color = l.color;
+  document.getElementById('forme-score-label').textContent = l.label;
+  document.getElementById('forme-score-advice').textContent = l.advice;
+}
+
+function saveFormeEntry() {
+  const date = new Date().toISOString().split('T')[0];
+  const entry = {
+    date,
+    energie: parseInt(document.getElementById('slider-energie').value),
+    sommeil: parseInt(document.getElementById('slider-sommeil').value),
+    recup:   parseInt(document.getElementById('slider-recup').value),
+    note:    document.getElementById('forme-note').value.trim(),
+  };
+  entry.score = ((entry.energie + entry.sommeil + entry.recup) / 3).toFixed(1);
+  const all = JSON.parse(localStorage.getItem('forme_entries') || '[]');
+  const idx = all.findIndex(e => e.date === date);
+  if (idx >= 0) all[idx] = entry; else all.push(entry);
+  all.sort((a, b) => a.date.localeCompare(b.date));
+  localStorage.setItem('forme_entries', JSON.stringify(all));
+  renderFormeHistory();
+  showToast('Bilan sauvegardé ✓');
+}
+
+function renderFormeHistory() {
+  const all = JSON.parse(localStorage.getItem('forme_entries') || '[]');
+  const hist = document.getElementById('forme-history');
+  if (!hist) return;
+  if (!all.length) { hist.innerHTML = ''; return; }
+  const scoreColor = s => parseFloat(s) >= 4 ? 'var(--parve)' : parseFloat(s) >= 3 ? 'var(--warn)' : 'var(--danger)';
+  hist.innerHTML = '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Historique</div>' +
+    [...all].reverse().map(e => `
+      <div class="forme-entry">
+        <div class="forme-score-badge" style="color:${scoreColor(e.score)}">${e.score}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${new Date(e.date+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">⚡${e.energie} 🌙${e.sommeil} 💪${e.recup}${e.note ? ' · ' + e.note.substring(0,40) : ''}</div>
+        </div>
+        <span onclick="deleteFormeEntry('${e.date}')" style="cursor:pointer;color:var(--muted);font-size:12px;padding:4px 8px" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">✕</span>
+      </div>`).join('');
+}
+
+function deleteFormeEntry(date) {
+  const all = JSON.parse(localStorage.getItem('forme_entries') || '[]').filter(e => e.date !== date);
+  localStorage.setItem('forme_entries', JSON.stringify(all));
+  renderFormeHistory();
+}
+
+// ============================================================
+// ALT MEALS (express / restaurant)
+// ============================================================
+
+async function getAltMeal(e, mode, dayKey, mealIdx) {
+  e.stopPropagation();
+  const day = CURRENT_PLAN[dayKey];
+  if (!day) return;
+  const meal = day.meals[mealIdx];
+  if (!meal) return;
+  const p = getProfile();
+  const resDiv = document.getElementById('alt-' + dayKey + '-' + mealIdx);
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<span style="color:var(--muted);font-size:12px">⏳ Claude cherche une alternative...</span>';
+
+  const modeLabel = mode === 'express' ? 'express en moins de 5 minutes' : 'adaptée à un restaurant';
+  const dietRules = {
+    kasher: 'Régime kasher (séparation lait/viande, pas de porc ni crustacés)',
+    standard: 'Standard', vegetarien: 'Végétarien', vegan: 'Vegan'
+  };
+
+  const prompt = `Repas original : "${meal.name}" (${meal.kcal} kcal, P${meal.p}g G${meal.g}g L${meal.l}g).
+Profil : ${p.weight}kg, objectif ${p.objective}, ${dietRules[p.diet] || p.diet}.
+Propose une alternative ${modeLabel} qui respecte les mêmes macros approximativement.
+${mode === 'express' ? 'Ingrédients ultra-simples, pas de cuisson complexe, idéalement assemblage froid ou micro-ondes.' : 'Plats courants dans un restaurant standard, commande facile, sans cuisine maison.'}
+Format : 2-3 lignes maximum. Direct et concret.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:300, messages:[{role:'user',content:prompt}]})
+    });
+    const data = await resp.json();
+    const text = (data.content||[]).map(b => b.text||'').join('');
+    resDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  } catch(err) {
+    resDiv.innerHTML = 'Erreur de connexion.';
+  }
+}
+
+// ============================================================
+// CLAUDE MODE TOGGLE + PHOTO MENU
+// ============================================================
+
+let claudeMode = 'text';
+let menuPhotoBase64 = null;
+
+function setClaudeMode(mode) {
+  claudeMode = mode;
+  document.getElementById('claude-text-mode').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('claude-menu-mode').style.display = mode === 'menu' ? 'block' : 'none';
+  document.getElementById('mode-text-btn').className = 'mode-btn' + (mode === 'text' ? ' active-mode' : '');
+  document.getElementById('mode-menu-btn').className = 'mode-btn' + (mode === 'menu' ? ' active-mode' : '');
+}
+
+function previewMenuPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const b64 = e.target.result;
+    menuPhotoBase64 = b64.split(',')[1];
+    const img = document.getElementById('menu-photo-img');
+    img.src = b64;
+    document.getElementById('menu-photo-preview').style.display = 'block';
+    document.getElementById('menu-photo-drop').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearMenuPhoto() {
+  menuPhotoBase64 = null;
+  document.getElementById('menu-photo-input').value = '';
+  document.getElementById('menu-photo-preview').style.display = 'none';
+  document.getElementById('menu-photo-drop').style.display = 'block';
+}
+
+// ============================================================
+// CLAUDE AI (updated with photo support)
+// ============================================================
+
+
 async function askClaude() {
   const btn = document.getElementById('ai-btn');
   const resEl = document.getElementById('ai-response');
@@ -1791,6 +2228,8 @@ function showSection(name, el) {
   if (name==='suppl') renderSuppl();
   if (name==='weight') renderWeight();
   if (name==='settings') { loadSettings(); renderNotifPreview(); }
+  if (name==='journal') renderJournal();
+  if (name==='forme') { renderFormeHistory(); updateFormeScore(); document.getElementById('forme-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }
   window.scrollTo(0,0);
 }
 
@@ -1953,6 +2392,7 @@ function showToast(msg) {
 // INIT
 // ============================================================
 document.getElementById('weight-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('journal-date').value = new Date().toISOString().split('T')[0];
 
 // Generate initial plan from saved profile
 const initProfile = getProfile();
