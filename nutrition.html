@@ -251,7 +251,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="nav-section">Suivi</div>
     <div class="nav-item" onclick="showSection('journal',this)"><span class="nav-icon">📋</span> Journal</div>
     <div class="nav-item" onclick="showSection('forme',this)"><span class="nav-icon">😴</span> Forme</div>
-    <div class="nav-item" onclick="showSection('weight',this)"><span class="nav-icon">⚖️</span> Poids</div>
+    <div class="nav-item" onclick="showSection('weight',this)"><span class="nav-icon">📏</span> Suivi corporel</div>
     <div class="nav-item" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Paramètres</div>
   </nav>
   <div class="sidebar-stats" id="sidebar-stats">
@@ -273,13 +273,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
   <div style="padding:32px 40px">
     <div class="day-tabs">
-      <div class="day-tab sport active" onclick="showDay('lun')">Lun</div>
-      <div class="day-tab sport" onclick="showDay('mar')">Mar</div>
-      <div class="day-tab sport" onclick="showDay('mer')">Mer ×2</div>
-      <div class="day-tab sport" onclick="showDay('jeu')">Jeu</div>
-      <div class="day-tab repos" onclick="showDay('ven')">Ven</div>
-      <div class="day-tab repos" onclick="showDay('sam')">Sam</div>
-      <div class="day-tab repos" onclick="showDay('dim')">Dim</div>
+      <div class="day-tab sport active" onclick="showDay('lun')" id="tab-lun">Lun</div>
+      <div class="day-tab sport" onclick="showDay('mar')" id="tab-mar">Mar</div>
+      <div class="day-tab sport" onclick="showDay('mer')" id="tab-mer">Mer</div>
+      <div class="day-tab sport" onclick="showDay('jeu')" id="tab-jeu">Jeu</div>
+      <div class="day-tab repos" onclick="showDay('ven')" id="tab-ven">Ven</div>
+      <div class="day-tab repos" onclick="showDay('sam')" id="tab-sam">Sam</div>
+      <div class="day-tab repos" onclick="showDay('dim')" id="tab-dim">Dim</div>
     </div>
     <div id="day-lun" class="day-content active"></div>
     <div id="day-mar" class="day-content"></div>
@@ -296,9 +296,44 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   <div class="page-header">
     <div class="page-tag">02 — Planning</div>
     <div class="page-title">Mes entraînements</div>
-    <div class="page-desc">Modifiable — clique sur "Modifier" pour adapter</div>
+    <div class="page-desc">Ajoute, modifie ou supprime des séances · Plusieurs séances par jour possibles</div>
   </div>
-  <div style="padding:32px 40px"><div class="training-grid" id="training-grid"></div></div>
+  <div style="padding:32px 40px">
+    <div id="training-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px"></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">+ Ajouter une séance</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="param-field"><label>Jour</label>
+          <select id="new-t-day">
+            <option value="Lundi">Lundi</option><option value="Mardi">Mardi</option>
+            <option value="Mercredi">Mercredi</option><option value="Jeudi">Jeudi</option>
+            <option value="Vendredi">Vendredi</option><option value="Samedi">Samedi</option>
+            <option value="Dimanche">Dimanche</option>
+          </select></div>
+        <div class="param-field"><label>Type de sport</label>
+          <select id="new-t-type">
+            <option value="crossfit">CrossFit / WOD</option>
+            <option value="hyrox">Hyrox</option>
+            <option value="force">Force / Haltérophilie</option>
+            <option value="kettlebell">Kettlebell</option>
+            <option value="cardio">Cardio / Running</option>
+            <option value="natation">Natation</option>
+            <option value="velo">Vélo / Zone 2</option>
+            <option value="yoga">Yoga / Mobilité</option>
+            <option value="sport_co">Sport collectif</option>
+            <option value="marche">Marche</option>
+            <option value="autre">Autre</option>
+          </select></div>
+        <div class="param-field"><label>Heure</label>
+          <input type="time" id="new-t-time" value="20:30"></div>
+        <div class="param-field"><label>Durée (minutes)</label>
+          <input type="number" id="new-t-duration" value="60" min="10" max="240" placeholder="60"></div>
+        <div class="param-field" style="grid-column:1/-1"><label>Description / notes</label>
+          <input type="text" id="new-t-notes" placeholder="Ex: Travail de force, arrache + épaulé-jeté..."></div>
+      </div>
+      <button onclick="addTrainingSession()" style="margin-top:14px;padding:9px 20px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">+ Ajouter</button>
+    </div>
+  </div>
 </section>
 
 <!-- COURSES -->
@@ -436,17 +471,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 <!-- POIDS -->
 <section class="section" id="section-weight" style="padding:0">
   <div class="page-header">
-    <div class="page-tag">06 — Suivi</div>
-    <div class="page-title">Évolution du poids</div>
-    <div class="page-desc" id="weight-desc">Pesée chaque lundi matin à jeun</div>
+    <div class="page-tag">08 — Suivi corporel</div>
+    <div class="page-title">Poids & Mensurations</div>
+    <div class="page-desc">Pesée lundi matin à jeun · Mensurations mensuelles · Objectif rapport poids/puissance</div>
   </div>
   <div style="padding:32px 40px">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px" id="weight-stats"></div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:24px">
+
+    <!-- STATS CARDS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px" id="weight-stats"></div>
+
+    <!-- CHART -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
       <canvas id="weightChart" height="220"></canvas>
     </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
-      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">Ajouter une pesée</div>
+
+    <!-- AJOUTER PESÉE -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:14px">⚖️ Ajouter une pesée</div>
       <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
         <div style="display:flex;flex-direction:column;gap:6px">
           <label style="font-size:12px;color:var(--muted);font-family:var(--font-mono)">Date</label>
@@ -457,15 +498,60 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
           <input type="number" id="weight-val" step="0.1" min="40" max="200" placeholder="88.0" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:16px;width:120px">
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <label style="font-size:12px;color:var(--muted);font-family:var(--font-mono)">Note (optionnel)</label>
-          <input type="text" id="weight-note" placeholder="ex: lendemain Shabbat..." style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;width:220px">
+          <label style="font-size:12px;color:var(--muted);font-family:var(--font-mono)">Note</label>
+          <input type="text" id="weight-note" placeholder="ex: lendemain Shabbat..." style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;width:200px">
         </div>
         <button onclick="addWeight()" style="padding:9px 20px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px;white-space:nowrap">+ Ajouter</button>
       </div>
     </div>
+
+    <!-- MENSURATIONS -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:6px">📏 Ajouter des mensurations</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">À prendre le matin à jeun, ruban placé à plat sans compression</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Tour de taille (cm)</label>
+          <input type="number" id="meas-taille" step="0.5" min="40" max="200" placeholder="90" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Pectoraux (cm)</label>
+          <input type="number" id="meas-poitrine" step="0.5" min="40" max="200" placeholder="100" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Tour de hanches (cm)</label>
+          <input type="number" id="meas-hanches" step="0.5" min="40" max="200" placeholder="95" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Cuisse droite (cm)</label>
+          <input type="number" id="meas-cuisse" step="0.5" min="20" max="100" placeholder="58" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Bras droit (cm)</label>
+          <input type="number" id="meas-bras" step="0.5" min="15" max="60" placeholder="35" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Mollet droit (cm)</label>
+          <input type="number" id="meas-mollet" step="0.5" min="15" max="60" placeholder="38" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:15px">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">Date</label>
+          <input type="date" id="meas-date" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-body);font-size:14px;width:160px">
+        </div>
+        <button onclick="addMeasurement()" style="padding:8px 18px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">+ Sauvegarder</button>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE MENSURATIONS -->
+    <div id="measurements-history"></div>
+
+    <!-- HISTORIQUE POIDS -->
     <div id="weight-history" style="margin-top:20px"></div>
   </div>
 </section>
+
 
 <!-- PARAMÈTRES -->
 <section class="section" id="section-settings" style="padding:0">
@@ -509,25 +595,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">🏋️ Activité & Contraintes</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="param-field"><label>Séances / semaine</label>
-          <input type="number" id="p-sessions" min="0" max="14" placeholder="5"></div>
-        <div class="param-field"><label>Niveau d'activité</label>
-          <select id="p-activity">
-            <option value="1.2">Sédentaire</option>
-            <option value="1.375">Légèrement actif</option>
-            <option value="1.55" selected>Modérément actif</option>
-            <option value="1.725">Très actif</option>
-            <option value="1.9">Extrêmement actif</option>
-          </select></div>
-        <div class="param-field"><label>Type de sport principal</label>
-          <select id="p-sport">
-            <option value="crossfit">CrossFit / HIIT</option>
-            <option value="force">Force / Haltérophilie</option>
-            <option value="cardio">Cardio / Endurance</option>
-            <option value="mixte" selected>Mixte (force + cardio)</option>
-            <option value="sport-co">Sport collectif</option>
-            <option value="autre">Autre</option>
-          </select></div>
         <div class="param-field"><label>Heure de réveil</label>
           <input type="time" id="p-wakeup" value="06:45"></div>
         <div class="param-field"><label>Petit-déjeuner après réveil</label>
@@ -538,8 +605,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
             <option value="60">1h après réveil</option>
             <option value="90">1h30 après réveil</option>
           </select></div>
-        <div class="param-field"><label>Heure de la séance</label>
-          <input type="time" id="p-trainingtime" value="20:30"></div>
         <div class="param-field"><label>Stress quotidien</label>
           <select id="p-stress">
             <option value="faible">Faible</option>
@@ -754,7 +819,9 @@ function minToTime(m) {
   return String(h).padStart(2,'0') + 'h' + String(mn).padStart(2,'0');
 }
 function getMealSlots(profile, isDouble) {
-  const breakfastMin = timeToMin(profile.wakeup || '06:45') + parseInt(profile.breakfastDelay || 30);
+  const wakeup = profile.wakeup || '06:45';
+  const delay = parseInt(profile.breakfastDelay || profile.breakfast ? 0 : 30);
+  const breakfastMin = profile.breakfast ? timeToMin(profile.breakfast) : timeToMin(wakeup) + 30;
   const trainingMin  = timeToMin(profile.trainingtime || '20:30');
   const isSoirSeance = trainingMin >= 18*60;
   const isMatin      = trainingMin < 11*60;
@@ -799,7 +866,7 @@ function getMealSlots(profile, isDouble) {
 // ---- GENERATE ONE DAY ----
 function generateDay(dayKey, profile, targets, foods, training) {
   const isSport = ['lun','mar','mer','jeu'].includes(dayKey);
-  const isDouble = dayKey === 'mer';
+  const isDouble = profile._double || false;
   const isRepos  = !isSport;
   const t = isDouble ? targets.double : isSport ? targets.sport : targets.rest;
   const slots = getMealSlots(profile, isDouble);
@@ -1000,23 +1067,37 @@ function generateDay(dayKey, profile, targets, foods, training) {
 
 // ---- GENERATE FULL WEEK ----
 function generateWeekPlan(profile) {
+  // Derive activity and training info from sessions
+  profile = Object.assign({}, profile, {
+    activity: calcActivityFromSessions(),
+    sport: detectSportType(),
+    trainingtime: detectMainTrainingTime(),
+    sessions: countTrainingSessions(),
+  });
   const targets = getDayTargets(profile);
   const foods = getFoodLib(profile);
-  const training = JSON.parse(localStorage.getItem('training') || '{}');
-
+  // Build DAYS dynamically from actual sessions
+  const allSessions = getTrainingSessions();
+  const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  const dayKeyMap = {Lundi:'lun',Mardi:'mar',Mercredi:'mer',Jeudi:'jeu',Vendredi:'ven',Samedi:'sam',Dimanche:'dim'};
+  const sessionsByDay = {};
+  allSessions.forEach(s => {
+    const k = dayKeyMap[s.day];
+    if (k) { sessionsByDay[k] = (sessionsByDay[k]||0) + 1; }
+  });
   const DAYS = {
-    lun: { title:'Lundi', sport:true,  double:false, sessions:profile.timing==='soir'?'20h30':'varies' },
-    mar: { title:'Mardi', sport:true,  double:false },
-    mer: { title:'Mercredi', sport:true, double:true },
-    jeu: { title:'Jeudi', sport:true,  double:false },
-    ven: { title:'Vendredi', sport:false, double:false },
-    sam: { title:'Samedi',   sport:false, double:false },
-    dim: { title:'Dimanche', sport:false, double:false },
+    lun: { title:'Lundi',    sport: (sessionsByDay.lun||0) > 0,  double: (sessionsByDay.lun||0) >= 2 },
+    mar: { title:'Mardi',    sport: (sessionsByDay.mar||0) > 0,  double: (sessionsByDay.mar||0) >= 2 },
+    mer: { title:'Mercredi', sport: (sessionsByDay.mer||0) > 0,  double: (sessionsByDay.mer||0) >= 2 },
+    jeu: { title:'Jeudi',    sport: (sessionsByDay.jeu||0) > 0,  double: (sessionsByDay.jeu||0) >= 2 },
+    ven: { title:'Vendredi', sport: (sessionsByDay.ven||0) > 0,  double: (sessionsByDay.ven||0) >= 2 },
+    sam: { title:'Samedi',   sport: (sessionsByDay.sam||0) > 0,  double: (sessionsByDay.sam||0) >= 2 },
+    dim: { title:'Dimanche', sport: (sessionsByDay.dim||0) > 0,  double: (sessionsByDay.dim||0) >= 2 },
   };
 
   const plan = {};
   for (const [key, dayMeta] of Object.entries(DAYS)) {
-    plan[key] = { ...dayMeta, ...generateDay(key, profile, targets, foods, training) };
+    plan[key] = { ...dayMeta, ...generateDay(key, Object.assign({}, profile, {_double: dayMeta.double}), targets, foods, null) };
   }
   return plan;
 }
@@ -1158,22 +1239,193 @@ function generateShopping(plan, profile, recipes) {
 }
 
 // ---- TRAINING DATA ----
+// Default training sessions — array of individual sessions
 const TRAINING_DEFAULT = [
-  {day:'Lundi', name:'Hyrox', badge:'sport', time:'20h30', duration:'1h',
-   notes:'Cardio-force : stations running + travail fonctionnel. Ski erg, wall balls, sandbag lunges, burpees.'},
-  {day:'Mardi', name:'Kettlebell — Renforcement', badge:'sport', time:'20h30', duration:'1h',
-   notes:'Gainage, force fonctionnelle, coordination. Swings, Turkish get-up, goblet squat, press, farmer carry.'},
-  {day:'Mercredi', name:'Soulevé de terre + WOD', badge:'sport', time:'19h20 + WOD', duration:'1h × 2',
-   notes:'1ère séance : force lourde, barbell. Deadlift progressif. 2ème séance WOD : haute intensité métabolique.'},
-  {day:'Jeudi', name:'Haltérophilie', badge:'sport', time:'20h30', duration:'1h',
-   notes:'Technique arrache et épaulé-jeté. Mobilité + force explosive. Squat de réception.'},
-  {day:'Vendredi', name:'Repos', badge:'repos', time:'—', duration:'—',
-   notes:'Récupération active. Stretching possible. Début du Shabbat le soir.'},
-  {day:'Samedi', name:'Shabbat / Repos', badge:'repos', time:'—', duration:'—',
-   notes:'Repos complet. Marche légère possible. Repas familiaux avec stratégie d\'assiette.'},
-  {day:'Dimanche', name:'Repos actif', badge:'repos', time:'Matin', duration:'30 min',
-   notes:'Zone 2 optionnelle : marche rapide ou vélo à allure conversation.'},
+  {day:'Lundi',    type:'hyrox',      time:'20:30', duration:60,  notes:'Cardio-force : stations running + travail fonctionnel. Ski erg, wall balls, sandbag lunges, burpees.'},
+  {day:'Mardi',    type:'kettlebell', time:'20:30', duration:60,  notes:'Gainage, force fonctionnelle, coordination. Swings, Turkish get-up, goblet squat, press, farmer carry.'},
+  {day:'Mercredi', type:'force',      time:'19:20', duration:60,  notes:'Force lourde, barbell. Deadlift progressif.'},
+  {day:'Mercredi', type:'crossfit',   time:'20:30', duration:60,  notes:'WOD : haute intensité métabolique.'},
+  {day:'Jeudi',    type:'force',      time:'20:30', duration:60,  notes:'Haltérophilie : arrache et épaulé-jeté. Mobilité + force explosive.'},
+  {day:'Dimanche', type:'velo',       time:'08:00', duration:30,  notes:'Zone 2 optionnelle : vélo ou marche rapide à allure conversation.'},
 ];
+
+const TYPE_LABELS = {
+  crossfit:'CrossFit / WOD', hyrox:'Hyrox', force:'Force / Haltérophilie',
+  kettlebell:'Kettlebell', cardio:'Cardio / Running', natation:'Natation',
+  velo:'Vélo / Zone 2', yoga:'Yoga / Mobilité', sport_co:'Sport collectif',
+  marche:'Marche', repos:'Repos', autre:'Entraînement'
+};
+const TYPE_ICONS = {
+  crossfit:'🏋️', hyrox:'🏃', force:'🔱', kettlebell:'🪃',
+  cardio:'🫁', natation:'🏊', velo:'🚴', yoga:'🧘', sport_co:'⚽', marche:'🚶', repos:'😴', autre:'⚡'
+};
+
+function getTrainingSessions() {
+  try {
+    const saved = localStorage.getItem('training_sessions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Validate: must be an array of objects with 'day' and 'type'
+      if (Array.isArray(parsed) && (parsed.length === 0 || parsed[0].day)) return parsed;
+    }
+  } catch(e) {}
+  // Fallback to defaults and save them
+  const def = JSON.parse(JSON.stringify(TRAINING_DEFAULT));
+  localStorage.setItem('training_sessions', JSON.stringify(def));
+  return def;
+}
+function saveTrainingSessions(sessions) {
+  localStorage.setItem('training_sessions', JSON.stringify(sessions));
+}
+
+function addTrainingSession() {
+  const day      = document.getElementById('new-t-day').value;
+  const type     = document.getElementById('new-t-type').value;
+  const time     = document.getElementById('new-t-time').value;
+  const duration = parseInt(document.getElementById('new-t-duration').value) || 60;
+  const notes    = document.getElementById('new-t-notes').value.trim();
+  const sessions = getTrainingSessions();
+  sessions.push({day, type, time, duration, notes});
+  // Sort by day order then time
+  const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  sessions.sort((a,b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) || a.time.localeCompare(b.time));
+  saveTrainingSessions(sessions);
+  document.getElementById('new-t-notes').value = '';
+  renderTraining();
+  showToast('Séance ajoutée ✓');
+}
+
+function deleteTrainingSession(idx) {
+  const sessions = getTrainingSessions();
+  sessions.splice(idx, 1);
+  saveTrainingSessions(sessions);
+  renderTraining();
+  showToast('Séance supprimée');
+}
+
+function startEditSession(idx) {
+  document.getElementById('t-view-'+idx).style.display = 'none';
+  document.getElementById('t-edit-'+idx).style.display = 'block';
+}
+
+function saveEditSession(idx) {
+  const sessions = getTrainingSessions();
+  sessions[idx].type     = document.getElementById('te-type-'+idx).value;
+  sessions[idx].time     = document.getElementById('te-time-'+idx).value;
+  sessions[idx].duration = parseInt(document.getElementById('te-dur-'+idx).value) || 60;
+  sessions[idx].notes    = document.getElementById('te-notes-'+idx).value;
+  saveTrainingSessions(sessions);
+  renderTraining();
+  showToast('Séance mise à jour ✓');
+}
+
+function cancelEditSession(idx) {
+  document.getElementById('t-view-'+idx).style.display = 'block';
+  document.getElementById('t-edit-'+idx).style.display = 'none';
+}
+
+function renderTraining() {
+  const grid = document.getElementById('training-grid');
+  if (!grid) return;
+  const sessions = getTrainingSessions();
+  if (!sessions.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Aucune séance. Ajoute ta première séance ci-dessous.</div>';
+    return;
+  }
+
+  // Group by day for display
+  const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  const byDay = {};
+  sessions.forEach((s,i) => {
+    if (!byDay[s.day]) byDay[s.day] = [];
+    byDay[s.day].push({...s, idx:i});
+  });
+
+  grid.innerHTML = dayOrder.filter(d => byDay[d]).map(day => {
+    const daySessions = byDay[day];
+    const isRepos = daySessions.every(s => s.type === 'repos');
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden">
+      <div style="padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--font-head);font-size:14px;font-weight:700">${day}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:20px;font-family:var(--font-mono);${isRepos ? 'background:rgba(144,216,184,.1);color:var(--parve);border:1px solid var(--parve)33' : 'background:rgba(200,240,110,.1);color:var(--accent);border:1px solid var(--accent)33'}">${daySessions.length} séance${daySessions.length>1?'s':''}</span>
+      </div>
+      ${daySessions.map(s => `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div id="t-view-${s.idx}">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <span style="font-size:18px">${TYPE_ICONS[s.type]||'⚡'}</span>
+              <span style="font-family:var(--font-head);font-size:14px;font-weight:700;flex:1">${TYPE_LABELS[s.type]||s.type}</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">🕐 ${s.time.replace(':','h')} — ${s.duration} min</span>
+            </div>
+            ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6">${s.notes}</div>` : ''}
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <button class="edit-btn" onclick="startEditSession(${s.idx})">✏️ Modifier</button>
+              <button class="edit-btn" onclick="deleteTrainingSession(${s.idx})" style="color:var(--danger)" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border2)'">🗑 Supprimer</button>
+            </div>
+          </div>
+          <div id="t-edit-${s.idx}" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="param-field"><label>Type</label>
+                <select id="te-type-${s.idx}">
+                  ${Object.entries(TYPE_LABELS).map(([v,l]) => `<option value="${v}"${v===s.type?' selected':''}>${l}</option>`).join('')}
+                </select></div>
+              <div class="param-field"><label>Heure</label>
+                <input type="time" id="te-time-${s.idx}" value="${s.time}"></div>
+              <div class="param-field"><label>Durée (min)</label>
+                <input type="number" id="te-dur-${s.idx}" value="${s.duration}" min="10" max="240"></div>
+              <div class="param-field" style="grid-column:1/-1"><label>Notes</label>
+                <input type="text" id="te-notes-${s.idx}" value="${s.notes||''}"></div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="edit-btn save-btn" onclick="saveEditSession(${s.idx})">✓ Sauvegarder</button>
+              <button class="edit-btn" onclick="cancelEditSession(${s.idx})">Annuler</button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// Derive activity multiplier from actual sessions
+function calcActivityFromSessions() {
+  const sessions = getTrainingSessions();
+  const n = sessions.filter(s => s.type !== 'repos').length;
+  const totalMin = sessions.reduce((s, t) => s + (t.type !== 'repos' ? (t.duration||60) : 0), 0);
+  if (totalMin >= 420 || n >= 7) return 1.9;
+  if (totalMin >= 300 || n >= 5) return 1.725;
+  if (totalMin >= 180 || n >= 3) return 1.55;
+  if (totalMin >= 60  || n >= 1) return 1.375;
+  return 1.2;
+}
+
+// Detect dominant sport type from sessions
+function detectSportType() {
+  const sessions = getTrainingSessions();
+  const counts = {};
+  sessions.forEach(s => { counts[s.type] = (counts[s.type]||0) + 1; });
+  const types = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  if (!types.length) return 'mixte';
+  const top = types[0][0];
+  if (['force','kettlebell','hyrox'].includes(top)) return 'force';
+  if (['cardio','velo','natation','marche'].includes(top)) return 'cardio';
+  if (top === 'crossfit') return 'crossfit';
+  return 'mixte';
+}
+
+// Detect main training time from sessions (most common or earliest evening)
+function detectMainTrainingTime() {
+  const sessions = getTrainingSessions().filter(s => s.type !== 'repos');
+  if (!sessions.length) return '20:30';
+  // Return most common time
+  const counts = {};
+  sessions.forEach(s => { counts[s.time] = (counts[s.time]||0)+1; });
+  return Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
+}
+
+// Count sessions for supplements logic
+function countTrainingSessions() {
+  return getTrainingSessions().filter(s => s.type !== 'repos').length;
+}
 
 function generateSupplements(profile) {
   const p = profile;
@@ -1183,7 +1435,7 @@ function generateSupplements(profile) {
   const isVegan = p.diet === 'vegan';
   const isVege = p.diet === 'vegetarien' || isVegan;
   const isMasse = obj === 'masse';
-  const hasHeavyTraining = parseInt(p.sessions||0) >= 3;
+  const hasHeavyTraining = countTrainingSessions() >= 3;
   const suppls = [];
 
   // CREATINE
@@ -1340,7 +1592,9 @@ function getHydration(profile, dayPlan) {
   const isSport = dayPlan.sport;
   const isDouble = dayPlan.double;
   const trainingMin = timeToMin(profile.trainingtime || '20:30');
-  const breakfastMin = timeToMin(profile.wakeup || '06:45') + parseInt(profile.breakfastDelay || 30);
+  const wakeup = profile.wakeup || '06:45';
+  const delay = parseInt(profile.breakfastDelay || profile.breakfast ? 0 : 30);
+  const breakfastMin = profile.breakfast ? timeToMin(profile.breakfast) : timeToMin(wakeup) + 30;
   const totalMl = Math.round((weight * 35 + (isDouble ? 800 : isSport ? 500 : 0)) / 100) * 100;
   const slots = [
     { time: minToTime(breakfastMin - 15),  qty: 250, note: "à jeun au réveil — active le métabolisme" },
@@ -1433,50 +1687,22 @@ function renderPlan() {
       </div>
     `;
   });
+
+  // Update tab labels dynamically
+  ['lun','mar','mer','jeu','ven','sam','dim'].forEach(key => {
+    const tab = document.getElementById('tab-' + key);
+    if (tab && CURRENT_PLAN && CURRENT_PLAN[key]) {
+      const day = CURRENT_PLAN[key];
+      const names = {lun:'Lun',mar:'Mar',mer:'Mer',jeu:'Jeu',ven:'Ven',sam:'Sam',dim:'Dim'};
+      tab.textContent = names[key] + (day.double ? ' ×2' : '');
+      tab.className = 'day-tab ' + (day.sport ? 'sport' : 'repos') + (tab.classList.contains('active') ? ' active' : '');
+    }
+  });
 }
 
 function toggleMeal(day, i) {
   const card = document.getElementById('mc-'+day+'-'+i);
   if (card) card.classList.toggle('open');
-}
-
-function renderTraining() {
-  const grid = document.getElementById('training-grid');
-  if (!grid) return;
-  const saved = JSON.parse(localStorage.getItem('training') || '{}');
-  grid.innerHTML = TRAINING_DEFAULT.map((t,i) => {
-    const notes = saved[i] !== undefined ? saved[i] : t.notes;
-    return `<div class="training-card">
-      <div class="training-day">${t.day}</div>
-      <div class="training-name">${t.name} <span class="training-badge badge-${t.badge}">${t.badge==='sport'?'⚡ Sport':'😴 Repos'}</span></div>
-      <div class="training-time">${t.time !== '—' ? '🕐 '+t.time+' — '+t.duration : '—'}</div>
-      <div class="training-notes" id="notes-display-${i}">${notes}</div>
-      <textarea class="edit-field" id="notes-edit-${i}" style="display:none">${notes}</textarea>
-      <div>
-        <button class="edit-btn" id="btn-edit-${i}" onclick="startEdit(${i})">✏️ Modifier</button>
-        <button class="edit-btn save-btn" id="btn-save-${i}" style="display:none" onclick="saveEdit(${i})">✓ Sauvegarder</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function startEdit(i) {
-  document.getElementById('notes-display-'+i).style.display='none';
-  document.getElementById('notes-edit-'+i).style.display='block';
-  document.getElementById('btn-edit-'+i).style.display='none';
-  document.getElementById('btn-save-'+i).style.display='inline-flex';
-  document.getElementById('notes-edit-'+i).focus();
-}
-function saveEdit(i) {
-  const val = document.getElementById('notes-edit-'+i).value;
-  const saved = JSON.parse(localStorage.getItem('training') || '{}');
-  saved[i] = val;
-  localStorage.setItem('training', JSON.stringify(saved));
-  document.getElementById('notes-display-'+i).textContent = val;
-  document.getElementById('notes-display-'+i).style.display='block';
-  document.getElementById('notes-edit-'+i).style.display='none';
-  document.getElementById('btn-edit-'+i).style.display='inline-flex';
-  document.getElementById('btn-save-'+i).style.display='none';
 }
 
 function renderShopping() {
@@ -1622,6 +1848,85 @@ function addWeight() {
 }
 function deleteWeight(date) { saveWeights(getWeights().filter(w => w.date !== date)); renderWeight(); }
 
+// ---- MEASUREMENTS ----
+function getMeasurements() { return JSON.parse(localStorage.getItem('measurements') || '[]'); }
+function saveMeasurements(arr) { localStorage.setItem('measurements', JSON.stringify(arr)); }
+
+function addMeasurement() {
+  const date = document.getElementById('meas-date').value;
+  if (!date) { alert('Sélectionne une date.'); return; }
+  const entry = {
+    date,
+    taille:   parseFloat(document.getElementById('meas-taille').value)   || null,
+    poitrine: parseFloat(document.getElementById('meas-poitrine').value) || null,
+    hanches:  parseFloat(document.getElementById('meas-hanches').value)  || null,
+    cuisse:   parseFloat(document.getElementById('meas-cuisse').value)   || null,
+    bras:     parseFloat(document.getElementById('meas-bras').value)     || null,
+    mollet:   parseFloat(document.getElementById('meas-mollet').value)   || null,
+  };
+  const hasData = Object.values(entry).filter(v => v !== null && v !== date).some(Boolean);
+  if (!hasData) { alert('Saisis au moins une mesure.'); return; }
+  const arr = getMeasurements();
+  const idx = arr.findIndex(e => e.date === date);
+  if (idx >= 0) arr[idx] = entry; else arr.push(entry);
+  arr.sort((a,b) => a.date.localeCompare(b.date));
+  saveMeasurements(arr);
+  ['taille','poitrine','hanches','cuisse','bras','mollet'].forEach(id => {
+    document.getElementById('meas-'+id).value = '';
+  });
+  renderMeasurements();
+  showToast('Mensurations sauvegardées ✓');
+}
+
+function deleteMeasurement(date) {
+  saveMeasurements(getMeasurements().filter(e => e.date !== date));
+  renderMeasurements();
+}
+
+function renderMeasurements() {
+  const cont = document.getElementById('measurements-history');
+  if (!cont) return;
+  const arr = getMeasurements();
+  if (!arr.length) { cont.innerHTML = ''; return; }
+
+  const FIELDS = [
+    {key:'taille',   label:'Taille',   unit:'cm', color:'var(--danger)'},
+    {key:'poitrine', label:'Pectoraux', unit:'cm', color:'var(--info)'},
+    {key:'hanches',  label:'Hanches',  unit:'cm', color:'var(--warn)'},
+    {key:'cuisse',   label:'Cuisse',   unit:'cm', color:'var(--parve)'},
+    {key:'bras',     label:'Bras',     unit:'cm', color:'var(--accent)'},
+    {key:'mollet',   label:'Mollet',   unit:'cm', color:'var(--muted)'},
+  ];
+
+  const reversed = [...arr].reverse();
+  const prev = reversed[1];
+
+  cont.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Dernières mensurations</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+        ${FIELDS.map(f => {
+          const last = reversed[0];
+          const val = last[f.key];
+          if (!val) return '';
+          const delta = prev && prev[f.key] ? val - prev[f.key] : null;
+          const deltaStr = delta !== null ? (delta < 0 ? ' <span style="color:var(--parve);font-size:11px">▼'+Math.abs(delta).toFixed(1)+'</span>' : delta > 0 ? ' <span style="color:var(--danger);font-size:11px">▲'+delta.toFixed(1)+'</span>' : '') : '';
+          return `<div style="background:var(--bg3);border-radius:var(--r);padding:10px;text-align:center">
+            <div style="font-family:var(--font-mono);font-size:17px;font-weight:500;color:${f.color}">${val}${deltaStr}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.06em">${f.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Historique</div>
+      ${reversed.map(e => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);min-width:90px">${new Date(e.date+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>
+          <span style="font-size:12px;color:var(--muted);flex:1">${FIELDS.filter(f=>e[f.key]).map(f=>`<span style="color:${f.color}">${f.label}</span> ${e[f.key]}cm`).join(' · ')}</span>
+          <span onclick="deleteMeasurement('${e.date}')" style="cursor:pointer;color:var(--muted);font-size:12px;padding:3px 7px" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">✕</span>
+        </div>`).join('')}
+    </div>`;
+}
+
 function renderWeight() {
   const arr = getWeights();
   const p = getProfile();
@@ -1743,14 +2048,13 @@ function readFormSettings() {
     weight:      document.getElementById('p-weight').value,
     goal:        document.getElementById('p-goal').value,
     targetDate:  document.getElementById('p-date').value,
-    sessions:    document.getElementById('p-sessions').value,
-    activity:    document.getElementById('p-activity').value,
+    activity:    calcActivityFromSessions(),
     diet:        document.getElementById('p-diet').value,
     objective:   document.getElementById('p-objective').value || 'seche',
-    sport:       document.getElementById('p-sport').value,
+    sport:       detectSportType(),
     wakeup:       document.getElementById('p-wakeup').value,
     breakfastDelay: parseInt(document.getElementById('p-breakfast-delay').value) || 30,
-    trainingtime: document.getElementById('p-trainingtime').value,
+    trainingtime: detectMainTrainingTime(),
     drink:       document.getElementById('p-drink').value,
     stress:      document.getElementById('p-stress').value,
     sleep:       document.getElementById('p-sleep').value,
@@ -1770,7 +2074,7 @@ function calcAndApply() {
 
   const age = parseInt(s.age)||50, height = parseInt(s.height)||184;
   const weight = parseFloat(s.weight)||88, goal = parseFloat(s.goal)||80;
-  const activity = parseFloat(s.activity)||1.55;
+  const activity = calcActivityFromSessions();
   const obj = s.objective || 'seche';
   const cfg = OBJ_CONFIG[obj] || OBJ_CONFIG.seche;
 
@@ -2303,8 +2607,8 @@ async function askClaude() {
   resEl.style.display='block';
   resEl.innerHTML='<div class="ai-stream" id="ai-box" style="opacity:.6">Analyse en cours...</div>';
 
-  const training = JSON.parse(localStorage.getItem('training') || '{}');
-  const trainingStr = TRAINING_DEFAULT.map((t,i) => `${t.day} — ${t.name} : ${training[i]||t.notes}`).join('\n');
+  const sessions = getTrainingSessions();
+  const trainingStr = sessions.map(s => `${s.day} ${s.time.replace(':','h')} — ${TYPE_LABELS[s.type]||s.type} (${s.duration} min)${s.notes ? ' : '+s.notes : ''}`).join('\n');
   const weights = getWeights();
   const weightStr = weights.length ? `Dernières pesées : ${weights.slice(-4).map(w=>w.date+' → '+w.val+'kg').join(', ')}` : 'Pas de pesée enregistrée.';
   const objLabels = {seche:'Sèche',perte:'Perte de poids',masse:'Prise de masse',bienetre:'Bien-être',performance:'Performance'};
@@ -2351,7 +2655,7 @@ function showSection(name, el) {
   if (name==='shopping') renderShopping();
   if (name==='recipes') renderRecipes();
   if (name==='suppl') renderSuppl();
-  if (name==='weight') renderWeight();
+  if (name==='weight') { renderWeight(); renderMeasurements(); }
   if (name==='settings') { loadSettings(); renderNotifPreview(); }
   if (name==='journal') renderJournal();
   if (name==='forme') { renderFormeHistory(); updateFormeScore(); document.getElementById('forme-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -2518,6 +2822,7 @@ function showToast(msg) {
 // ============================================================
 document.getElementById('weight-date').value = new Date().toISOString().split('T')[0];
 document.getElementById('journal-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('meas-date').value = new Date().toISOString().split('T')[0];
 
 // Generate initial plan from saved profile
 const initProfile = getProfile();
@@ -2537,6 +2842,8 @@ document.getElementById('sidebar-stats').innerHTML = `
   <div class="stat-row"><span class="stat-label">Cible</span><span class="stat-val">${s0.targetDate?new Date(s0.targetDate+'T12:00').toLocaleDateString('fr-FR',{month:'long'}):'—'}</span></div>
 `;
 document.getElementById('logo-sub').textContent = `${s0.diet} · ${s0.objective}`;
+const statSessions = document.getElementById('stat-sessions');
+if (statSessions) statSessions.textContent = countTrainingSessions() + '/sem';
 
 // Restore notifications if previously enabled
 if (localStorage.getItem('notifEnabled') && 'Notification' in window && Notification.permission === 'granted') {
