@@ -268,6 +268,136 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .burger-btn{display:flex}
   .page-header{padding-right:60px!important}
 }
+
+/* ---- MOBILE RESPONSIVE FIXES ---- */
+@media(max-width:600px){
+  /* All grids go single column on small screens */
+  .totals-bar{grid-template-columns:repeat(2,1fr)!important}
+  .macro-grid{grid-template-columns:repeat(2,1fr)!important}
+  .training-grid{grid-template-columns:1fr!important}
+
+  /* Perf form — date + type stacked */
+  #section-perf .param-field,
+  #section-perf [style*="grid-template-columns:1fr 1fr 1fr"],
+  #section-perf [style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important
+  }
+
+  /* Settings — wakeup + breakfast delay stacked */
+  #section-settings [style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important
+  }
+
+  /* Body comp — 2 cols max */
+  #body-comp-chart [style*="grid-template-columns:repeat(4"]{
+    grid-template-columns:repeat(2,1fr)!important
+  }
+
+  /* Dashboard macros — 2 cols */
+  #section-dashboard [style*="grid-template-columns:repeat(4"]{
+    grid-template-columns:repeat(2,1fr)!important
+  }
+  #section-dashboard [style*="grid-template-columns:repeat(2"]{
+    grid-template-columns:1fr!important
+  }
+
+  /* Calc result in settings — 2 cols */
+  #calc-result [style*="grid-template-columns:repeat(4"]{
+    grid-template-columns:repeat(2,1fr)!important
+  }
+
+  /* All param-field inputs full width */
+  .param-field input, .param-field select{
+    width:100%!important;min-width:0!important
+  }
+
+  /* Perf ratio bar — 2 cols */
+  #perf-ratio-bar > div{
+    grid-template-columns:repeat(2,1fr)!important
+  }
+
+  /* Weight/journal free food form — stacked */
+  #section-journal [style*="display:flex"][style*="gap:12px"]{
+    flex-direction:column!important;align-items:stretch!important
+  }
+  #section-journal input[style*="width:200px"],
+  #section-journal input[style*="width:120px"],
+  #section-journal input[style*="width:80px"],
+  #section-journal input[style*="width:70px"],
+  #section-journal input[style*="width:160px"]{
+    width:100%!important
+  }
+
+  /* Weight entry form stacked */
+  #section-weight [style*="display:flex"][style*="gap:12px"]{
+    flex-direction:column!important;align-items:stretch!important
+  }
+  #section-weight input[style*="width:160px"],
+  #section-weight input[style*="width:120px"],
+  #section-weight input[style*="width:200px"]{
+    width:100%!important
+  }
+
+  /* Measurements grid — 2 cols */
+  #section-weight [style*="grid-template-columns:repeat(3,1fr)"]{
+    grid-template-columns:repeat(2,1fr)!important
+  }
+
+  /* Forme sliders */
+  #section-forme [style*="display:flex"][style*="gap:14px"]{
+    flex-direction:column!important
+  }
+
+  /* Page header padding */
+  .page-header{padding:16px 16px 14px!important}
+  .page-title{font-size:22px!important}
+
+  /* Section padding */
+  .section > div[style*="padding:32px 40px"]{
+    padding:16px!important
+  }
+
+  /* Overflow protection global */
+  .section, .main, .modal{overflow-x:hidden!important}
+  *{max-width:100%;box-sizing:border-box}
+
+  /* Perf movement goals input */
+  #perf-goals-section [style*="grid-template-columns"]{
+    grid-template-columns:1fr!important
+  }
+
+  /* Force set rows — stacked on mobile */
+  .force-set-row{
+    grid-template-columns:1fr 60px 60px 70px 28px!important;
+    gap:4px!important
+  }
+
+  /* Dashboard score */
+  #section-dashboard .dash-score{font-size:36px!important}
+
+  /* Notif slots */
+  .hydration-slot{flex-wrap:wrap!important;gap:4px!important}
+
+  /* Alt buttons */
+  .alt-btns{flex-wrap:wrap!important}
+}
+
+@media(max-width:600px) and (orientation:landscape){
+  /* Landscape: 2-col where possible to use horizontal space */
+  #section-perf [style*="grid-template-columns:1fr 1fr 1fr"]{
+    grid-template-columns:1fr 1fr!important
+  }
+  #section-settings [style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr 1fr!important
+  }
+  /* But keep the problem fields separated */
+  #section-perf #perf-date,
+  #section-perf #perf-type,
+  #section-settings #p-wakeup,
+  #section-settings #p-breakfast-delay{
+    min-width:0!important;width:100%!important
+  }
+}
 </style>
 </head>
 <body>
@@ -642,9 +772,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">🏋️ Activité & Contraintes</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="param-field"><label>Heure de réveil</label>
-          <input type="time" id="p-wakeup" value="06:45"></div>
-        <div class="param-field"><label>Petit-déjeuner après réveil</label>
+        <div class="param-field" style="min-width:0"><label>Heure de réveil</label>
+          <input type="time" id="p-wakeup" value="06:45" style="width:100%"></div>
+        <div class="param-field" style="min-width:0"><label>Petit-déjeuner après réveil</label>
           <select id="p-breakfast-delay">
             <option value="15">15 min après réveil</option>
             <option value="30" selected>30 min après réveil</option>
@@ -748,7 +878,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <!-- SAISIE -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
       <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">+ Enregistrer une séance</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px">
         <div class="param-field"><label>Date</label>
           <input type="date" id="perf-date"></div>
         <div class="param-field"><label>Type de séance</label>
@@ -2322,7 +2452,7 @@ function calcAndApply() {
   res.innerHTML = `
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:14px">📊 Besoins calculés — <span style="color:var(--accent)">${cfg.label}</span></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-bottom:10px">
         <div class="total-card"><div class="total-val">${Math.round(bmr)}</div><div class="total-lbl">BMR kcal/j</div></div>
         <div class="total-card accent"><div class="total-val">${tdee}</div><div class="total-lbl">TDEE total</div></div>
         <div class="total-card"><div class="total-val">${kcalMin}–${kcalMax}</div><div class="total-lbl">Cible kcal/j</div></div>
@@ -3418,7 +3548,7 @@ function renderDashboard() {
     </div>
 
     <!-- Grid stats -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px">
       <div class="dash-section">
         <div class="dash-section-title">⚖️ Poids</div>
         ${weightThis
@@ -3454,7 +3584,7 @@ function renderDashboard() {
     <!-- Macros semaine -->
     ${totalMealsEaten > 0 ? `<div class="dash-section">
       <div class="dash-section-title">🍽️ Macros totales de la semaine</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">
         <div class="total-card accent"><div class="total-val">${totalKcal}</div><div class="total-lbl">kcal total</div></div>
         <div class="total-card"><div class="total-val" style="color:var(--info)">${totalP}g</div><div class="total-lbl">Protéines</div></div>
         <div class="total-card"><div class="total-val" style="color:var(--warn)">${totalG}g</div><div class="total-lbl">Glucides</div></div>
@@ -3742,7 +3872,7 @@ function renderBodyCompositionChart() {
   const fatPts    = weightData.map(d => toX(d.date)+','+toYFat(d.fatKg)).join(' ');
 
   cont.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:12px">
       <div class="total-card"><div class="total-val" style="color:var(--info)">${latest.weight}kg</div><div class="total-lbl">Poids</div></div>
       <div class="total-card"><div class="total-val" style="color:var(--danger)">${latest.fatPct}%</div><div class="total-lbl">Gras est.</div></div>
       <div class="total-card"><div class="total-val" style="color:${fatDelta<=0?'var(--parve)':'var(--danger)'};font-size:15px">${fatDelta>0?'+':''}${fatDelta}kg</div><div class="total-lbl">Δ Gras</div></div>
@@ -3966,12 +4096,17 @@ function showToast(msg) {
 // ============================================================
 // INIT
 // ============================================================
-document.getElementById('weight-date').value = new Date().toISOString().split('T')[0];
-document.getElementById('journal-date').value = new Date().toISOString().split('T')[0];
-document.getElementById('meas-date').value = new Date().toISOString().split('T')[0];
-document.getElementById('perf-date').value = new Date().toISOString().split('T')[0];
+const today = new Date().toISOString().split('T')[0];
+const _setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+_setVal('weight-date', today);
+_setVal('journal-date', today);
+_setVal('meas-date', today);
+_setVal('perf-date', today);
 const weightRem = localStorage.getItem('weightReminderEnabled');
-if (weightRem === '1') { const tog = document.getElementById('weight-notif-toggle'); if(tog) { tog.checked=true; const sl=document.getElementById('weight-notif-slider'); if(sl) sl.style.background='var(--accent)'; scheduleWeightReminder(); } }
+if (weightRem === '1') {
+  const tog = document.getElementById('weight-notif-toggle');
+  if (tog) { tog.checked = true; const sl = document.getElementById('weight-notif-slider'); if (sl) sl.style.background = 'var(--accent)'; scheduleWeightReminder(); }
+}
 
 // Generate initial plan from saved profile
 const initProfile = getProfile();
@@ -3984,13 +4119,15 @@ updateProgress();
 // Restore sidebar stats
 const s0 = getProfile();
 const objLabels0 = {seche:'Sèche 🔥',perte:'Perte ⚖️',masse:'Masse 💪',bienetre:'Bien-être 🌿',performance:'Perf. ⚡'};
-document.getElementById('sidebar-stats').innerHTML = `
+const _ss = document.getElementById('sidebar-stats');
+if (_ss) _ss.innerHTML = `
   <div class="stat-row"><span class="stat-label">Objectif</span><span class="stat-val">${s0.goal} kg</span></div>
   <div class="stat-row"><span class="stat-label">Départ</span><span class="stat-val">${s0.weight} kg</span></div>
   <div class="stat-row"><span class="stat-label">Mode</span><span class="stat-val">${objLabels0[s0.objective]||'—'}</span></div>
   <div class="stat-row"><span class="stat-label">Cible</span><span class="stat-val">${s0.targetDate?new Date(s0.targetDate+'T12:00').toLocaleDateString('fr-FR',{month:'long'}):'—'}</span></div>
 `;
-document.getElementById('logo-sub').textContent = `${s0.diet} · ${s0.objective}`;
+const _ls = document.getElementById('logo-sub');
+if (_ls) _ls.textContent = `${s0.diet} · ${s0.objective}`;
 const statSessions = document.getElementById('stat-sessions');
 if (statSessions) statSessions.textContent = countTrainingSessions() + '/sem';
 
