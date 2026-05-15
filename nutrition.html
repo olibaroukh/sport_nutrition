@@ -416,6 +416,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="nav-item" onclick="showSection('recipes',this)"><span class="nav-icon">🍳</span> Recettes</div>
     <div class="nav-section">Info</div>
     <div class="nav-item" onclick="showSection('suppl',this)"><span class="nav-icon">💊</span> Compléments</div>
+    <div class="nav-item" onclick="showSection('bloodtest',this)"><span class="nav-icon">🩺</span> Bilan sanguin</div>
     <div class="nav-section">Suivi</div>
     <div class="nav-item" onclick="showSection('journal',this)"><span class="nav-icon">📋</span> Journal</div>
     <div class="nav-item" onclick="showSection('forme',this)"><span class="nav-icon">😴</span> Forme</div>
@@ -860,6 +861,59 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
 </section>
 
+<!-- BILAN SANGUIN -->
+<section class="section" id="section-bloodtest" style="padding:0">
+  <div class="page-header">
+    <div class="page-tag">05b — Biologie</div>
+    <div class="page-title">Bilan sanguin</div>
+    <div class="page-desc">Saisis tes résultats · Les dosages des compléments s'ajustent automatiquement</div>
+  </div>
+  <div style="padding:32px 40px;max-width:680px">
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:6px">Pourquoi faire un bilan ?</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8">
+        À partir de 40 ans, certains marqueurs biologiques impactent directement la composition corporelle, la récupération et l'efficacité des compléments. Un bilan annuel permet d'ajuster précisément les dosages plutôt que de prendre des doses génériques.<br>
+        <strong style="color:var(--text)">Coût estimé :</strong> 40-80€ en laboratoire, remboursé partiellement si prescrit par un médecin.<br>
+        <strong style="color:var(--text)">Quand :</strong> idéalement 6 semaines après le début de la supplémentation pour voir l'effet.
+      </div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px">Date du dernier bilan</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <input type="date" id="blood-date" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;color:var(--text);font-size:14px">
+        <button onclick="saveBloodDate()" style="padding:8px 16px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:13px">Enregistrer</button>
+        <span id="blood-date-display" style="font-size:12px;color:var(--muted);font-family:var(--font-mono)"></span>
+      </div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">Résultats — saisie manuelle</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px" id="blood-fields"></div>
+      <button onclick="saveBloodResults()" style="margin-top:16px;padding:9px 20px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">💾 Sauvegarder et ajuster les dosages</button>
+    </div>
+
+    <div id="blood-interpretation" style="margin-bottom:20px"></div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:10px">Quoi demander à ton médecin ?</div>
+      <div style="font-size:13px;color:var(--muted);line-height:2">
+        🔵 <strong style="color:var(--text)">Vitamine D (25-OH)</strong> — référence : 40-60 ng/mL optimal<br>
+        🔵 <strong style="color:var(--text)">Zinc plasmatique</strong> — référence : 11-18 µmol/L<br>
+        🔵 <strong style="color:var(--text)">Testostérone totale</strong> — référence homme : 3-10 ng/mL (baisse dès 35 ans)<br>
+        🔵 <strong style="color:var(--text)">DHEA-S</strong> — référence homme 45-55 ans : 100-350 µg/dL<br>
+        🔵 <strong style="color:var(--text)">Ferritine</strong> — référence : 30-150 µg/L (sportif : viser 50+)<br>
+        🔵 <strong style="color:var(--text)">CRP ultra-sensible</strong> — inflammation chronique : &lt;1 mg/L optimal<br>
+        🟡 <strong style="color:var(--text)">Magnésium érythrocytaire</strong> — plus fiable que le sérique<br>
+        🟡 <strong style="color:var(--text)">Glycémie à jeun + HbA1c</strong> — sensibilité à l'insuline<br>
+        🟡 <strong style="color:var(--text)">Bilan lipidique</strong> — HDL/LDL/triglycérides
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- PERFORMANCES -->
 <section class="section" id="section-perf" style="padding:0">
   <div class="page-header">
@@ -1205,206 +1259,222 @@ function getMealSlots(profile, isDouble) {
 
 // ---- GENERATE ONE DAY ----
 function generateDay(dayKey, profile, targets, foods, training) {
-  const isSport = ['lun','mar','mer','jeu'].includes(dayKey);
+  const isSport  = ['lun','mar','mer','jeu'].includes(dayKey);
   const isDouble = profile._double || false;
   const isRepos  = !isSport;
-  const t = isDouble ? targets.double : isSport ? targets.sport : targets.rest;
-  const slots = getMealSlots(profile, isDouble);
+  const t        = isDouble ? targets.double : isSport ? targets.sport : targets.rest;
+  const slots    = getMealSlots(profile, isDouble);
+  const obj      = profile.objective;
+  const age      = parseInt(profile.age) || 40;
+  const isVege   = ['vegetarien','vegan'].includes(profile.diet);
 
-  // Morning drink
   const drinkLabels = {
-    'cafe':'café noir', 'cafe-lait':'café au lait', 'the-vert':'thé vert',
-    'the-noir':'thé noir', 'the-blanc':'thé blanc', 'infusion':'tisane', 'rien':'eau (à jeun)'
+    'cafe':'cafe noir', 'cafe-lait':'cafe au lait', 'the-vert':'the vert',
+    'the-noir':'the noir', 'the-blanc':'the blanc', 'infusion':'tisane', 'rien':'eau'
   };
-  const drink = drinkLabels[profile.drink] || 'café noir';
-  const obj = profile.objective;
-  const isKasher = profile.diet === 'kasher';
-  const isVege = ['vegetarien','vegan'].includes(profile.diet);
+  const drink = drinkLabels[profile.drink] || 'cafe noir';
 
-  // Build meals
+  // AGE-BASED BELLY STRATEGY
+  // < 35  : standard
+  // 35-45 : moderate carb reduction evening
+  // > 45  : strict no-carb after training + no carbs breakfast rest days
+  const isLosing    = obj === 'seche' || obj === 'perte';
+  const strictBelly = isLosing && age >= 45;
+  const modBelly    = isLosing && age >= 35 && age < 45;
+  const z2Tip       = strictBelly && isSport ? "\n💡 Zone 2 recommandee : 20 min marche rapide ou velo a jeun ce matin." : "";
+  const noCardNote  = strictBelly ? "\n🚫 Zero feculent le soir — protocole +45 ans." : "";
+  const allowEveCarbs = !strictBelly || isDouble || obj === 'masse' || obj === 'performance';
+
   const meals = [];
 
-  // --- PETIT DEJEUNER ---
+  // PETIT DEJEUNER
   let pdj;
   if (isDouble || obj === 'performance' || obj === 'masse') {
-    // High carb morning
     const oats = foods.carbs.high.find(c => c.name.includes('avoine'));
-    const qty = oats.baseQty;
-    const wheyG = 30;
-    const beurreG = 15;
+    const qty = oats.baseQty, wheyG = 30, beurreG = 15;
     pdj = {
-      time: slots[0], name: 'Porridge protéiné renforcé', type: 'parve',
+      time: slots[0], name: 'Porridge proteine renforce', type: 'parve',
       kcal: Math.round(qty*3.8 + wheyG*3.5 + beurreG*6 + 110),
       p: Math.round(qty*0.13 + wheyG*0.75 + 1),
       g: Math.round(qty*0.59 + 6 + 24),
       l: Math.round(qty*0.07 + beurreG*0.6),
-      detail: `${qty}g flocons d'avoine · 30g protéine en poudre · 1 banane · ${beurreG}g beurre de cacahuète · ${drink}`,
+      detail: qty + "g flocons d'avoine · 30g proteine · 1 banane · " + beurreG + "g beurre cacahuete · " + drink,
       recipe: 'porridge'
     };
-  } else if (isRepos && (obj === 'seche' || obj === 'perte')) {
-    // Low carb morning on rest days
+  } else if (strictBelly && isRepos) {
     pdj = {
-      time: slots[0], name: 'Oeufs + avocat (sans glucides)', type: 'parve',
+      time: slots[0], name: "Oeufs + avocat · zero glucides", type: 'parve',
+      kcal: 320, p: 24, g: 4, l: 24,
+      detail: "3 oeufs au plat · 1/2 avocat · tomates · " + drink + z2Tip + "\n⚠️ +45 ans · repos · pas de feculents le matin.",
+      recipe: 'oeufs-avocat'
+    };
+  } else if (strictBelly && isSport) {
+    pdj = {
+      time: slots[0], name: "Oeufs · flocons · fruit leger", type: 'parve',
+      kcal: 370, p: 28, g: 35, l: 14,
+      detail: "3 oeufs brouilles · 30g flocons d'avoine · 1 pomme · " + drink + z2Tip + "\nGlucides limites — reserves pour la seance.",
+      recipe: 'omelette'
+    };
+  } else if ((modBelly || isLosing) && isRepos) {
+    pdj = {
+      time: slots[0], name: "Oeufs + avocat (repos)", type: 'parve',
       kcal: 310, p: 22, g: 6, l: 22,
-      detail: `3 oeufs au plat · 1/2 avocat · tomates · ${drink}\nJour de repos : pas de féculents le matin.`,
+      detail: "3 oeufs au plat · 1/2 avocat · tomates · " + drink + "\nJour de repos : feculents reduits.",
       recipe: 'oeufs-avocat'
     };
   } else {
-    // Standard egg breakfast
     pdj = {
-      time: slots[0], name: 'Omelette · légumes · fruit', type: 'parve',
+      time: slots[0], name: "Omelette · legumes · fruit", type: 'parve',
       kcal: 350, p: 26, g: 28, l: 14,
-      detail: `3 oeufs · champignons + épinards · 1 tranche pain complet · 1 fruit · ${drink}`,
+      detail: "3 oeufs · champignons + epinards · 1 tranche pain complet · 1 fruit · " + drink,
       recipe: 'omelette'
     };
   }
   meals.push(pdj);
 
-  // --- DEJEUNER ---
+  // DEJEUNER (unchanged — main meal)
   let dej;
   const viandeOpts = foods.proteins.viande;
   const poissonOpts = foods.proteins.poisson;
   const viandeMain = viandeOpts.length ? viandeOpts[Math.abs(dayKey.charCodeAt(0)-108) % viandeOpts.length] : null;
-  const carbMain = foods.carbs.high[Math.abs(dayKey.charCodeAt(0)-108) % foods.carbs.high.length];
+  const carbMain   = foods.carbs.high[Math.abs(dayKey.charCodeAt(0)-108) % foods.carbs.high.length];
   const veg1 = foods.vegs[Math.abs(dayKey.charCodeAt(0)-108) % foods.vegs.length];
   const veg2 = foods.vegs[(Math.abs(dayKey.charCodeAt(0)-108)+3) % foods.vegs.length];
 
   if (!isVege && viandeMain) {
-    const qty = viandeMain.baseQty;
-    const carbQty = carbMain.baseQty;
+    const qty = viandeMain.baseQty, carbQty = carbMain.baseQty;
     dej = {
       time: slots[1],
-      name: `${viandeMain.name.charAt(0).toUpperCase()+viandeMain.name.slice(1)} · ${carbMain.name.replace(' cuit','').replace(' cuites','')} · ${veg1}`,
+      name: viandeMain.name.charAt(0).toUpperCase()+viandeMain.name.slice(1) + " · " + carbMain.name.replace(" cuit","").replace(" cuites","") + " · " + veg1,
       type: 'viande',
       kcal: Math.round(qty*viandeMain.g100p*0.04 + qty*viandeMain.g100l*0.09 + carbQty*carbMain.g100c*0.04 + carbQty*carbMain.g100p*0.04 + 60),
       p:    Math.round(qty*viandeMain.g100p/100 + carbQty*carbMain.g100p/100),
       g:    Math.round(carbQty*carbMain.g100c/100),
       l:    Math.round(qty*viandeMain.g100l/100 + 10),
-      detail: `${qty}g ${viandeMain.name} · ${carbQty}g ${carbMain.name} · ${veg1} + ${veg2} · huile d'olive · herbes`,
+      detail: qty + "g " + viandeMain.name + " · " + carbQty + "g " + carbMain.name + " · " + veg1 + " + " + veg2 + " · huile d'olive · herbes",
       recipe: 'viande-legumes'
     };
   } else {
-    // Legumes or fish for vege / repos with kasher flexibility
     const legume = foods.proteins.legumineuses[0];
     dej = {
-      time: slots[1],
-      name: `Salade complète · ${legume.name} · légumes`,
-      type: 'parve',
+      time: slots[1], name: "Salade complete · " + legume.name + " · legumes", type: 'parve',
       kcal: 420, p: 30, g: 45, l: 10,
-      detail: `${legume.baseQty}g ${legume.name} · salade verte · ${veg1} · ${veg2} · huile d'olive + citron`,
+      detail: legume.baseQty + "g " + legume.name + " · salade verte · " + veg1 + " · " + veg2 + " · huile d'olive + citron",
       recipe: 'salade-legumineuses'
     };
   }
   meals.push(dej);
 
-  // --- COLLATION PRE-SEANCE ---
+  // COLLATION PRE-SEANCE
   if (isSport) {
-    let collation;
-    if (obj === 'seche' || obj === 'perte') {
-      collation = {
-        time: slots[2], name: 'Shake protéiné + fruit', type: 'parve',
+    let col;
+    if (strictBelly) {
+      col = {
+        time: slots[2], name: "Shake proteine pre-seance", type: 'parve',
+        kcal: 160, p: 28, g: 5, l: 2,
+        detail: "30g proteine en poudre · eau · glacons\n⚠️ +45 ans : glucides evites avant seance du soir.",
+        recipe: null
+      };
+    } else if (obj === 'seche' || obj === 'perte') {
+      col = {
+        time: slots[2], name: "Shake proteine + fruit", type: 'parve',
         kcal: 240, p: 28, g: 24, l: 2,
-        detail: '30g protéine en poudre · eau · 1 banane ou pomme\nÉnergie disponible pour la séance sans surplus.',
+        detail: "30g proteine en poudre · eau · 1 banane ou pomme",
         recipe: null
       };
     } else if (obj === 'masse' || obj === 'performance') {
-      collation = {
-        time: slots[2], name: 'Shake + dattes + amandes', type: 'parve',
+      col = {
+        time: slots[2], name: "Shake + dattes + amandes", type: 'parve',
         kcal: 340, p: 30, g: 45, l: 10,
-        detail: '30g protéine en poudre · 3 dattes · 20g amandes\nCharge glucidique pour performance maximale.',
+        detail: "30g proteine en poudre · 3 dattes · 20g amandes\nCharge glucidique pour performance maximale.",
         recipe: null
       };
     } else {
-      collation = {
-        time: slots[2], name: 'Shake protéiné simple', type: 'parve',
+      col = {
+        time: slots[2], name: "Shake proteine simple", type: 'parve',
         kcal: 200, p: 26, g: 10, l: 2,
-        detail: '30g protéine en poudre · eau · glaçons.',
+        detail: "30g proteine en poudre · eau · glacons.",
         recipe: null
       };
     }
-    meals.push(collation);
+    meals.push(col);
   }
 
-  // --- DINER ---
+  // DINER
   let diner;
   const poissonDiner = poissonOpts.length ? poissonOpts[Math.abs(dayKey.charCodeAt(0)-110) % poissonOpts.length] : null;
-  const dinerVeg1 = foods.vegs[(Math.abs(dayKey.charCodeAt(0))+1) % foods.vegs.length];
-  const dinerVeg2 = foods.vegs[(Math.abs(dayKey.charCodeAt(0))+4) % foods.vegs.length];
+  const dVeg1 = foods.vegs[(Math.abs(dayKey.charCodeAt(0))+1) % foods.vegs.length];
+  const dVeg2 = foods.vegs[(Math.abs(dayKey.charCodeAt(0))+4) % foods.vegs.length];
 
-  if (isRepos && (obj === 'seche' || obj === 'perte')) {
-    // Light dinner repos days
+  if (isRepos && isLosing) {
     if (poissonDiner) {
       diner = {
-        time: slots[isSport?3:2], name: `${poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1)} · légumes vapeur`,
-        type: 'poisson', kcal: 280, p: 38, g: 8, l: 10,
-        detail: `${poissonDiner.baseQty}g ${poissonDiner.name} · ${dinerVeg1} + ${dinerVeg2} vapeur · huile d'olive · citron\nPas de féculent la nuit — jour de repos.`,
+        time: slots[2], type: 'poisson', kcal: 275, p: 38, g: 5, l: 10,
+        name: poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1) + " · legumes vapeur",
+        detail: poissonDiner.baseQty + "g " + poissonDiner.name + " · " + dVeg1 + " + " + dVeg2 + " vapeur · huile d'olive · citron" + noCardNote,
         recipe: 'poisson-legumes'
       };
     } else {
       diner = {
-        time: slots[isSport?3:2], name: 'Oeufs + légumes (soir léger)', type: 'parve',
-        kcal: 250, p: 22, g: 10, l: 14,
-        detail: `2 oeufs · ${dinerVeg1} + ${dinerVeg2} · huile d'olive`,
+        time: slots[2], name: "Oeufs + legumes soir leger", type: 'parve',
+        kcal: 250, p: 22, g: 5, l: 14,
+        detail: "2 oeufs · " + dVeg1 + " + " + dVeg2 + " · huile d'olive" + noCardNote,
         recipe: null
       };
     }
   } else if (isSport) {
-    // Post sport — protein focus, light carbs if needed
     if (!isVege && viandeOpts.length) {
       const v = viandeOpts[(Math.abs(dayKey.charCodeAt(0))+2) % viandeOpts.length];
       const qty = Math.round(v.baseQty * (obj === 'masse' ? 1.1 : 0.9));
+      const carbSoir = allowEveCarbs ? (isDouble ? 80 : obj === 'masse' ? 25 : 0) : 0;
       diner = {
-        time: slots[3], name: `${v.name.charAt(0).toUpperCase()+v.name.slice(1)} · ${dinerVeg1} · ${dinerVeg2}`,
-        type: 'viande', kcal: Math.round(qty*v.g100p*0.04 + qty*v.g100l*0.09 + 60),
-        p: Math.round(qty*v.g100p/100), g: obj==='masse'?25:8, l: Math.round(qty*v.g100l/100 + 10),
-        detail: `${qty}g ${v.name} · ${dinerVeg1} + ${dinerVeg2} vapeur · huile d'olive${obj==='masse'?' · 80g riz brun':''}`,
+        time: slots[3], type: 'viande',
+        name: v.name.charAt(0).toUpperCase()+v.name.slice(1) + " · " + dVeg1 + " · " + dVeg2,
+        kcal: Math.round(qty*v.g100p*0.04 + qty*v.g100l*0.09 + 60 + carbSoir*1.5),
+        p: Math.round(qty*v.g100p/100), g: carbSoir, l: Math.round(qty*v.g100l/100 + 10),
+        detail: qty + "g " + v.name + " · " + dVeg1 + " + " + dVeg2 + " vapeur · huile d'olive" + (carbSoir > 0 ? " · " + carbSoir + "g riz brun" : "") + noCardNote,
         recipe: 'viande-legumes-soir'
       };
     } else if (poissonDiner) {
       diner = {
-        time: slots[3], name: `${poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1)} · légumes`, type: 'poisson',
-        kcal: 330, p: 38, g: 6, l: 14,
-        detail: `${poissonDiner.baseQty}g ${poissonDiner.name} · ${dinerVeg1} + ${dinerVeg2} · huile d'olive`,
+        time: slots[3], type: 'poisson', kcal: 300, p: 38, g: allowEveCarbs ? 6 : 4, l: 12,
+        name: poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1) + " · legumes",
+        detail: poissonDiner.baseQty + "g " + poissonDiner.name + " · " + dVeg1 + " + " + dVeg2 + " · huile d'olive" + noCardNote,
         recipe: 'poisson-legumes'
       };
     } else {
       diner = {
-        time: slots[3], name: 'Tofu · légumes · herbes', type: 'parve',
-        kcal: 300, p: 28, g: 10, l: 14,
-        detail: '150g tofu ferme · légumes sautés · sauce soja · herbes',
+        time: slots[3], name: "Tofu · legumes · herbes", type: 'parve',
+        kcal: 280, p: 28, g: allowEveCarbs ? 10 : 4, l: 14,
+        detail: "150g tofu ferme · legumes sautes · sauce soja · herbes" + noCardNote,
         recipe: null
       };
     }
   } else {
-    // Repos — balanced dinner
     if (poissonDiner) {
       diner = {
-        time: slots[isSport?3:2], name: `${poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1)} · légumes · herbes`,
-        type: 'poisson', kcal: 320, p: 36, g: 10, l: 12,
-        detail: `${poissonDiner.baseQty}g ${poissonDiner.name} · salade · ${dinerVeg1} · huile d'olive + citron`,
+        time: slots[2], type: 'poisson', kcal: 310, p: 36, g: allowEveCarbs ? 10 : 5, l: 12,
+        name: poissonDiner.name.charAt(0).toUpperCase()+poissonDiner.name.slice(1) + " · legumes · herbes",
+        detail: poissonDiner.baseQty + "g " + poissonDiner.name + " · salade · " + dVeg1 + " · huile d'olive + citron" + noCardNote,
         recipe: 'poisson-legumes'
       };
     } else {
       diner = {
-        time: slots[isSport?3:2], name: 'Légumineuses · légumes rôtis', type: 'parve',
-        kcal: 350, p: 20, g: 40, l: 10,
-        detail: '120g lentilles · légumes rôtis · épices · huile d\'olive',
+        time: slots[2], name: "Legumineuses · legumes rotis", type: 'parve',
+        kcal: allowEveCarbs ? 340 : 260, p: 20, g: allowEveCarbs ? 38 : 12, l: 10,
+        detail: (allowEveCarbs ? "120g lentilles" : "80g lentilles (reduit)") + " · legumes rotis · epices · huile d'olive" + noCardNote,
         recipe: 'salade-legumineuses'
       };
     }
   }
   meals.push(diner);
 
-  // Recalculate totals
-  const totalP = meals.reduce((s,m)=>s+m.p,0);
-  const totalG = meals.reduce((s,m)=>s+m.g,0);
-  const totalL = meals.reduce((s,m)=>s+m.l,0);
-  const totalKcal = meals.reduce((s,m)=>s+m.kcal,0);
-  const finalKcal = Math.round(totalKcal * 1.05); // +5% for oils/condiments
-
-  return { meals, p:totalP, g:totalG, l:totalL, kcal:finalKcal, target:t };
+  const totalP    = meals.reduce((s,m) => s+m.p, 0);
+  const totalG    = meals.reduce((s,m) => s+m.g, 0);
+  const totalL    = meals.reduce((s,m) => s+m.l, 0);
+  const totalKcal = meals.reduce((s,m) => s+m.kcal, 0);
+  return { meals, p:totalP, g:totalG, l:totalL, kcal:Math.round(totalKcal*1.05), target:t };
 }
-
 // ---- GENERATE FULL WEEK ----
 function generateWeekPlan(profile) {
   // Derive activity and training info from sessions
@@ -1776,147 +1846,198 @@ function generateSupplements(profile) {
   const isVege = p.diet === 'vegetarien' || isVegan;
   const isMasse = obj === 'masse';
   const hasHeavyTraining = countTrainingSessions() >= 3;
+  const isLosing = obj === 'seche' || obj === 'perte';
+  const age50plus = age >= 45;
+  const age35plus = age >= 35;
+
+  // Load blood test results for dosage adjustment
+  const blood = JSON.parse(localStorage.getItem('blood_results') || '{}');
+
   const suppls = [];
 
+  // PHASE 1 — SEMAINE 1 : base universelle
+
   // CREATINE
-  if (hasHeavyTraining && (isMasse || !isFemme || obj === 'seche' || obj === 'performance')) {
+  if (hasHeavyTraining && (isMasse || !isFemme || isLosing || obj === 'performance')) {
     suppls.push({
-      emoji:'💪', name:'Créatine monohydrate',
-      timing:'Matin — avec le petit-déjeuner',
-      dose: (isMasse ? '5–7g' : '5g') + '/jour · 7j/7',
-      role: isMasse
-        ? "Favorise la synthèse musculaire · Améliore la force et la récupération"
-        : "Préserve le muscle en déficit · Améliore la récupération · Augmente la force",
-      kasher:"Oui — poudre pure sans additifs",
-      note: isFemme
-        ? "Bien tolérée chez la femme sans rétention eau notable. Bénéfice démontré si entraînement de force régulier."
-        : "Dissoudre dans eau ou shake. Effet visible après 2–3 semaines de prise régulière."
+      emoji: '💪', name: 'Creatine monohydrate',
+      timing: 'Matin — avec le petit-dejeuner', dose: (isMasse ? '5-7g' : '5g') + '/jour · 7j/7',
+      role: isMasse ? "Synthese musculaire · Force · Recuperation" : "Preserve le muscle en deficit · Ameliore la recuperation",
+      kasher: "Oui — poudre pure",
+      note: "Dissoudre dans eau ou shake. Effet visible apres 2-3 semaines.",
+      phase: 1
     });
   }
 
   // OMEGA-3
   suppls.push({
-    emoji:'🐟', name:'Oméga-3 (EPA + DHA)',
-    timing:'Matin — avec le petit-déjeuner',
-    dose: isVegan ? '2g/jour (algues)' : '2–3g/jour',
-    role: "Réduit l'inflammation post-entraînement · Combustion des graisses · Santé articulaire"
-        + (isFemme ? " · Équilibre hormonal" : ""),
-    kasher: isVegan
-      ? "Oméga-3 d'algues = vegan et certifiable"
-      : "Huile liquide = sans problème de gélatine. Solgar Kosher ou Nordic Naturals Kosher.",
-    note:"Prendre avec un repas contenant des graisses pour une absorption optimale."
+    emoji: '🐟', name: 'Omega-3 (EPA + DHA)',
+    timing: 'Matin — avec le petit-dejeuner', dose: isVegan ? '2g/jour (algues)' : '2-3g/jour',
+    role: "Inflammation post-entrainement · Combustion des graisses · Articulations" + (isFemme ? " · Equilibre hormonal" : "") + (age50plus ? " · Sante cardiovasculaire" : ""),
+    kasher: isVegan ? "Omega-3 algues = vegan" : "Huile liquide = sans gelatine. Solgar Kosher ou Nordic Naturals.",
+    note: "Prendre avec un repas gras pour absorption optimale.",
+    phase: 1
   });
 
-  // VITAMINE D
+  // VITAMINE D3
+  const vitDDose = age >= 40 ? '3000-4000 UI/jour' : '1000-2000 UI/jour';
+  const vitDBlood = blood.vitD;
+  const vitDNote = vitDBlood
+    ? (parseFloat(vitDBlood) < 30 ? "Carence confirmee (" + vitDBlood + " ng/mL) — dose elevee justifiee. Recontroler dans 3 mois."
+       : parseFloat(vitDBlood) < 50 ? "Taux insuffisant (" + vitDBlood + " ng/mL) — maintenir la supplementation."
+       : "Taux optimal (" + vitDBlood + " ng/mL) — dose de maintenance suffisante.")
+    : "Faire doser (prise de sang) si possible — carence frequente apres 40 ans.";
   suppls.push({
-    emoji:'☀️', name:'Vitamine D3',
-    timing:'Matin — avec le petit-déjeuner',
-    dose: age >= 40 ? '2000–4000 UI/jour' : '1000–2000 UI/jour',
-    role: age >= 40
-      ? "Composition corporelle · Hormones · Immunité · Os — critique à partir de 40 ans"
-      : "Immunité · Énergie · Santé osseuse · Prévention carence",
-    kasher:"Préférer gélule végétale (HPMC) ou liquide pour éviter la gélatine.",
-    note: age >= 40
-      ? "Faire doser la vitamine D sanguine si possible — carence fréquente après 40 ans."
-      : "Carence fréquente en hiver. 1000 UI suffisante en été si exposition solaire régulière."
+    emoji: '☀️', name: 'Vitamine D3 + K2',
+    timing: 'Matin — avec le petit-dejeuner',
+    dose: vitDDose + (age50plus ? ' + K2 100-200mcg/jour' : ''),
+    role: "Os · Hormones · Immunite" + (age50plus ? " · La K2 dirige le calcium vers les os et protege les arteres — indissociable de la D3 apres 45 ans" : ""),
+    kasher: "Gelule vegetale (HPMC) ou liquide pour eviter la gelatine.",
+    note: vitDNote,
+    phase: 1
   });
 
   // MAGNESIUM
   suppls.push({
-    emoji:'🌙', name:'Magnésium glycinate',
-    timing:'Soir — après la séance ou au coucher',
-    dose: (isFemme && age < 35) ? '200–250mg/soir' : '300mg/soir',
-    role: "Qualité du sommeil · Récupération musculaire · Gestion du cortisol · Anti-crampes"
-        + (isFemme ? " · Réduit les symptômes du syndrome prémenstruel" : ""),
-    kasher:"Oui — glycinate pur sans additifs",
-    note:"Forme glycinate = meilleure tolérance digestive. Éviter le malate le soir (trop stimulant)."
+    emoji: '🌙', name: 'Magnesium glycinate',
+    timing: 'Soir — apres la seance ou au coucher',
+    dose: (isFemme && age < 35) ? '200-250mg/soir' : '300mg/soir',
+    role: "Sommeil · Recuperation musculaire · Cortisol · Anti-crampes" + (isFemme ? " · SPM" : "") + (age50plus ? " · Sensibilite a l'insuline" : ""),
+    kasher: "Oui — glycinate pur",
+    note: "Glycinate = meilleure tolerance digestive. Eviter le malate le soir (stimulant).",
+    phase: 1
   });
+
+  // COLLAGENE — prioritaire a 35+ avec sport intensif
+  if (age35plus || hasHeavyTraining) {
+    suppls.push({
+      emoji: '🦴', name: 'Collagene marin',
+      timing: 'Matin ou post-seance avec vitamine C', dose: '10g/jour',
+      role: "Tendons · Cartilages · " + (hasHeavyTraining ? "Indispensable avec soulevé de terre et Hyrox" : "Prevention usure articulaire") + (age50plus ? " · Peau · Recuperation" : ""),
+      kasher: isVegan ? "Collagene vegetal (spiruline + silice) — pas de vrai collagene animal en vegan." : "Poisson = parve. Eviter bovin sans certificat.",
+      note: "Prendre avec vitamine C (citron, orange). Effet visible apres 8-12 semaines. " + (age50plus ? "Prioritaire a 50 ans avec programme intensif." : ""),
+      phase: 1
+    });
+  }
 
   // PROTEINES
   const protTarget = Math.round((parseFloat(p.weight)||65) * (isMasse ? 1.9 : 1.8));
   suppls.push({
-    emoji:'🥛', name:'Protéine en poudre',
-    timing:'Autour des séances + matin si besoin',
-    dose: "30g par prise · objectif " + protTarget + "g protéines/jour",
-    role: "Atteindre l'objectif protéique quotidien · Récupération post-séance"
-        + (isMasse ? " · Indispensable en prise de masse" : ""),
-    kasher: isVegan
-      ? "Isolat de pois ou protéine de riz — vegan naturellement."
-      : "Isolat de pois : parve naturellement. Whey : certification kasher indispensable.",
-    note: isVegan
-      ? "Mélanger isolat de pois + protéine de riz pour un profil acides aminés complet."
-      : "Isolat de pois recommandé si difficile à sourcer en kasher certifié."
+    emoji: '🥛', name: 'Proteine en poudre',
+    timing: 'Autour des seances + matin si besoin',
+    dose: "30g par prise · objectif " + protTarget + "g proteines/jour",
+    role: "Atteindre l'objectif proteique" + (isMasse ? " · Indispensable en prise de masse" : ""),
+    kasher: isVegan ? "Isolat de pois ou proteine de riz." : "Isolat de pois : parve naturellement. Whey : certification kasher indispensable.",
+    note: isVegan ? "Melanger isolat pois + riz pour profil acides amines complet." : "Isolat de pois recommande si whey kasher difficile a sourcer.",
+    phase: 1
   });
+
+  // PHASE 2 — SEMAINE 3-4 : ciblage hormonal
+
+  // ZINC
+  if (!isFemme && hasHeavyTraining || isVegan || age50plus) {
+    const zincBlood = blood.zinc;
+    const zincNote = zincBlood
+      ? (parseFloat(zincBlood) < 11 ? "Carence confirmee (" + zincBlood + " µmol/L) — dose therapeutique justifiee."
+         : "Taux correct (" + zincBlood + " µmol/L) — dose de maintenance suffisante.")
+      : "Ne pas depasser 40mg/jour. Prendre avec un repas pour eviter les nausees.";
+    suppls.push({
+      emoji: '⚡', name: 'Zinc bisglycinate',
+      timing: 'Soir — avec le diner', dose: '15-25mg/jour',
+      role: "Testosterone · Recuperation musculaire · Immunite" + (age50plus ? " · Chute acceleree du zinc apres 45 ans chez le sportif intensif" : ""),
+      kasher: "Zinc bisglycinate ou gluconate. Verifier excipients.",
+      note: zincNote,
+      phase: 2
+    });
+  }
+
+  // ASHWAGANDHA — homme 35+ objectif perte/seche/performance
+  if (!isFemme && age35plus && (isLosing || obj === 'performance')) {
+    suppls.push({
+      emoji: '🌿', name: 'Ashwagandha KSM-66',
+      timing: 'Soir — avec le diner ou au coucher', dose: '300-600mg/jour',
+      role: "Reduit le cortisol chronique · Soutient la testosterone naturelle · Qualite du sommeil" + (age50plus ? " · Particulierement efficace apres 45 ans avec programme intensif et stress pro" : ""),
+      kasher: "Verifier excipients et source. Certains extraits sont certifiables.",
+      note: "Choisir extrait standardise KSM-66 (pas n'importe quel ashwagandha). Prendre le soir — effet anxiolytique et recuperateur. Resultats sur cortisol visibles en 4-6 semaines.",
+      phase: 2
+    });
+  }
+
+  // CURCUMINE + PIPERINE
+  if (age35plus && hasHeavyTraining) {
+    suppls.push({
+      emoji: '🟡', name: 'Curcumine + Piperine',
+      timing: 'Dejeuner ou diner — avec un repas gras', dose: '500-1000mg curcumine + 5-10mg piperine',
+      role: "Anti-inflammatoire articulaire · Courbatures post-Hyrox · Protection tendinite" + (age50plus ? " · Inflammation systemique reduite — impact direct sur composition corporelle" : ""),
+      kasher: "Verifier excipients — poudre pure souvent kasher sans probleme.",
+      note: "La piperine (extrait de poivre noir) est INDISPENSABLE — multiplie l'absorption par 20. Sans elle, la curcumine n'est quasiment pas assimilee.",
+      phase: 2
+    });
+  }
 
   // FER — femme uniquement
   if (isFemme) {
+    const ferBlood = blood.ferritine;
+    const ferNote = ferBlood
+      ? (parseFloat(ferBlood) < 20 ? "Carence confirmee (ferritine " + ferBlood + " µg/L) — supplementation indispensable."
+         : parseFloat(ferBlood) < 50 ? "Taux bas (ferritine " + ferBlood + " µg/L) — surveillance et supplementation conseillee."
+         : "Taux correct (ferritine " + ferBlood + " µg/L) — pas de supplementation necessaire.")
+      : "NE PAS supplementer sans bilan sanguin (ferritine). Ne pas prendre avec cafe, the ou calcium.";
     suppls.push({
-      emoji:'🩸', name:'Fer (bisglycinate)',
-      timing:'Matin — à jeun ou avec vitamine C',
-      dose:'14–18mg/jour · uniquement si carence confirmée',
-      role:"Énergie et endurance · Prévention anémie · Récupération · Important chez la femme sportive",
-      kasher:"Bisglycinate de fer = forme la mieux tolérée. Vérifier absence d'additifs.",
-      note:"Ne pas supplémenter sans bilan sanguin (ferritine). Ne pas prendre avec café, thé ou calcium."
+      emoji: '🩸', name: 'Fer (bisglycinate)',
+      timing: 'Matin — a jeun ou avec vitamine C', dose: '14-18mg/jour · si carence confirmee',
+      role: "Energie · Prevention anemie · Importante chez la femme sportive",
+      kasher: "Bisglycinate = meilleure tolerance. Verifier additifs.",
+      note: ferNote,
+      phase: 2
     });
   }
 
   // CALCIUM — femme ou vegan
   if (isFemme || isVegan) {
     suppls.push({
-      emoji:'🦷', name:'Calcium',
-      timing:'Repas du soir — séparé du fer',
-      dose:'500–800mg/jour · si apports insuffisants',
-      role:"Santé osseuse · Contraction musculaire · Important pour la femme sportive",
-      kasher: isVegan
-        ? "Calcium d'algues ou citrate de calcium — vegan."
-        : "Citrate de calcium = bien absorbé. Vérifier absence de gélatine.",
-      note: isFemme
-        ? "Espacer du fer d'au moins 2h — ils entrent en compétition d'absorption."
-        : "Indispensable en alimentation vegan — apports insuffisants sans produits laitiers."
+      emoji: '🦷', name: 'Calcium',
+      timing: 'Repas du soir — separe du fer', dose: '500-800mg/jour · si apports insuffisants',
+      role: "Os · Contraction musculaire" + (isFemme ? " · Femme sportive" : " · Indispensable en vegan"),
+      kasher: isVegan ? "Calcium algues ou citrate." : "Citrate de calcium. Verifier gelatine.",
+      note: isFemme ? "Espacer du fer d'au moins 2h." : "Apports insuffisants sans produits laitiers.",
+      phase: 2
     });
   }
 
-  // B12
+  // B12 — vegan/vege
   if (isVegan) {
     suppls.push({
-      emoji:'🧬', name:'Vitamine B12',
-      timing:'Matin — avec le petit-déjeuner', dose:'250–1000μg/semaine',
-      role:"INDISPENSABLE en vegan · Énergie · Système nerveux · Globules rouges",
-      kasher:"Méthylcobalamine = forme la plus biodisponible. Vérifier excipients.",
-      note:"Carence silencieuse mais grave. Supplémentation non négociable en alimentation végétale."
+      emoji: '🧬', name: 'Vitamine B12',
+      timing: 'Matin', dose: '250-1000mcg/semaine',
+      role: "INDISPENSABLE en vegan · Energie · Systeme nerveux",
+      kasher: "Methylcobalamine = forme la plus biodisponible.",
+      note: "Non negociable en alimentation vegetale. Faire doser regulierement.",
+      phase: 1
     });
   } else if (isVege) {
     suppls.push({
-      emoji:'🧬', name:'Vitamine B12',
-      timing:'Matin — avec le petit-déjeuner', dose:'100–250μg/jour',
-      role:"Recommandée en végétarien · Énergie · Système nerveux",
-      kasher:"Méthylcobalamine = forme la plus biodisponible.",
-      note:"Lacto-ovo-végétariens peuvent couvrir via oeufs et laitages, mais la supplémentation reste prudente."
+      emoji: '🧬', name: 'Vitamine B12',
+      timing: 'Matin', dose: '100-250mcg/jour',
+      role: "Recommandee en vegetarien · Energie · Systeme nerveux",
+      kasher: "Methylcobalamine.",
+      note: "Lacto-ovo-vege peuvent couvrir via oeufs et laitages — supplementation preventive conseillee.",
+      phase: 2
     });
   }
 
-  // ZINC — homme sportif intensif ou vegan
-  if ((!isFemme && hasHeavyTraining) || isVegan) {
+  // DHEA — optionnel homme 50+
+  if (!isFemme && age50plus && isLosing) {
+    const dheaBlood = blood.dhea;
     suppls.push({
-      emoji:'⚡', name:'Zinc',
-      timing:'Soir — avec le dîner', dose:'15–25mg/jour',
-      role:"Testostérone et hormones · Récupération musculaire · Immunité · Déficitaire chez le sportif intensif",
-      kasher:"Zinc gluconate ou citrate. Vérifier excipients.",
-      note:"Ne pas dépasser 40mg/jour. Prendre avec un repas pour éviter les nausées."
-    });
-  }
-
-  // COLLAGENE
-  if (age >= 35 || hasHeavyTraining) {
-    suppls.push({
-      emoji:'🦴', name:'Collagène marin (optionnel)',
-      timing:'Matin ou post-séance avec vitamine C', dose:'10g/jour',
-      role: "Santé articulaire et tendons · "
-          + (hasHeavyTraining ? "Utile avec entraînements lourds et soulevé de terre" : "Prévention usure articulaire"),
-      kasher: isVegan
-        ? "Collagène végétal (spiruline + silice) — pas de vrai collagène animal en vegan."
-        : "Collagène de poisson = parve. Éviter tout collagène bovin sans certificat.",
-      note:"Prendre avec vitamine C. Effet visible après 8–12 semaines."
+      emoji: '🔬', name: 'DHEA (optionnel)',
+      timing: 'Matin — avec le petit-dejeuner', dose: '25-50mg/jour',
+      role: "Precurseur hormonal qui chute apres 45 ans · Testosterone · Energie · Composition corporelle",
+      kasher: "Generalement kasher — verifier excipients.",
+      note: dheaBlood
+        ? "Ton taux DHEA-S : " + dheaBlood + " µg/dL. " + (parseFloat(dheaBlood) < 150 ? "Taux bas — supplementation pertinente a discuter avec un medecin." : "Taux acceptable — supplementation moins urgente.")
+        : "Faire doser DHEA-S en prise de sang AVANT de commencer. Disponible sans ordonnance en France. A discuter avec un medecin si taux confirme bas.",
+      phase: 3
     });
   }
 
@@ -2148,23 +2269,60 @@ function renderSuppl() {
   const container = document.getElementById('suppl-list');
   if (!container) return;
   const SUPPLS = generateSupplements(getProfile());
-  container.innerHTML = SUPPLS.map(s => `
-    <div class="meal-card" style="margin-bottom:10px">
-      <div class="meal-header" style="cursor:default">
-        <span style="font-size:20px">${s.emoji}</span>
-        <div style="flex:1">
-          <div class="meal-name">${s.name}</div>
-          <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">${s.timing} · ${s.dose}</div>
-        </div>
-      </div>
-      <div class="meal-body" style="display:block">
-        <div class="meal-detail-text" style="margin-top:0"><strong style="color:var(--text)">Rôle :</strong> ${s.role}</div>
-        <div class="meal-detail-text" style="margin-top:6px"><span style="color:var(--danger);font-weight:500">Certif. :</span> ${s.kasher}</div>
-        <div style="margin-top:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--muted);border-left:2px solid var(--accent)">${s.note}</div>
-      </div>
-    </div>`).join('');
-}
+  const byPhase = {1:[], 2:[], 3:[]};
+  SUPPLS.forEach(s => (byPhase[s.phase||1]).push(s));
 
+  const phaseLabels = {
+    1: {label:'Phase 1 — Semaine 1 · Base universelle', color:'var(--accent)', note:'A commencer des le debut. Socle fondamental.'},
+    2: {label:'Phase 2 — Semaine 3-4 · Ciblage hormonal', color:'var(--info)', note:'Introduire progressivement une fois la phase 1 en place.'},
+    3: {label:'Phase 3 — Optionnel · Sur bilan sanguin', color:'var(--warn)', note:'A envisager uniquement apres prise de sang et resultats.'},
+  };
+
+  const renderCard = s => {
+    const phaseColor = s.phase === 2 ? 'var(--info)' : s.phase === 3 ? 'var(--warn)' : 'var(--accent)';
+    return '<div class="meal-card" style="margin-bottom:10px">' +
+      '<div class="meal-header" style="cursor:default">' +
+        '<span style="font-size:20px">' + s.emoji + '</span>' +
+        '<div style="flex:1">' +
+          '<div class="meal-name">' + s.name + '</div>' +
+          '<div style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">' + s.timing + ' · ' + s.dose + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="meal-body" style="display:block">' +
+        '<div class="meal-detail-text" style="margin-top:0"><strong style="color:var(--text)">Role :</strong> ' + s.role + '</div>' +
+        '<div class="meal-detail-text" style="margin-top:6px"><span style="color:var(--danger);font-weight:500">Certif. :</span> ' + s.kasher + '</div>' +
+        '<div style="margin-top:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--muted);border-left:2px solid ' + phaseColor + '">' + s.note + '</div>' +
+      '</div>' +
+    '</div>';
+  };
+
+  container.innerHTML = [1,2,3].filter(ph => byPhase[ph].length > 0).map(ph => {
+    const pl = phaseLabels[ph];
+    return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;margin-bottom:12px">' +
+      '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:' + pl.color + ';margin-bottom:2px">' + pl.label + '</div>' +
+      '<div style="font-size:11px;color:var(--muted)">' + pl.note + '</div>' +
+    '</div>' +
+    byPhase[ph].map(renderCard).join('');
+  }).join('');
+
+  // Blood test reminder
+  const profile = getProfile();
+  const age = parseInt(profile.age) || 40;
+  if (age >= 40) {
+    const blood = JSON.parse(localStorage.getItem('blood_results') || '{}');
+    const lastBlood = localStorage.getItem('last_blood_date');
+    const weeksAgo = lastBlood ? Math.round((Date.now() - new Date(lastBlood)) / (7*864e5)) : null;
+    const reminderColor = !lastBlood ? 'var(--warn)' : weeksAgo > 24 ? 'var(--warn)' : 'var(--parve)';
+    const reminderText = !lastBlood
+      ? "Aucune prise de sang enregistree. A partir de 40 ans, un bilan annuel est recommande pour optimiser les dosages : vitamine D, zinc, testosterone, DHEA-S, ferritine."
+      : weeksAgo > 24 ? "Derniere prise de sang il y a " + weeksAgo + " semaines. Un nouveau bilan annuel serait utile."
+      : "Derniere prise de sang il y a " + weeksAgo + " semaines. RAS.";
+    container.innerHTML += '<div style="margin-top:16px;padding:14px 16px;border:1px solid ' + reminderColor + '44;background:rgba(240,200,110,.06);border-radius:var(--r2);font-size:13px;color:' + reminderColor + ';line-height:1.7">' +
+      '🩺 <strong>Bilan sanguin</strong><br>' + reminderText +
+      '<br><button onclick="document.querySelectorAll(\'.section\').forEach(s=>s.classList.remove(\'active\')); document.getElementById(\'section-bloodtest\').classList.add(\'active\');" style="margin-top:10px;padding:6px 14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:12px">Saisir mes resultats →</button>' +
+    '</div>';
+  }
+}
 // ============================================================
 // WEIGHT TRACKING
 // ============================================================
@@ -3026,6 +3184,7 @@ function showSection(name, el, fromBurger) {
   if (name==='weight') { renderWeight(); renderMeasurements(); }
   if (name==='perf') { updatePerfForm(); renderPerf(); }
   if (name==='dashboard') renderDashboard();
+  if (name==='bloodtest') renderBloodTest();
   if (name==='settings') { loadSettings(); renderNotifPreview(); }
   if (name==='journal') renderJournal();
   if (name==='forme') { renderFormeHistory(); updateFormeScore(); document.getElementById('forme-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -4086,6 +4245,149 @@ async function shareDashboard() {
   }, 'image/png');
 }
 
+// ============================================================
+// BILAN SANGUIN
+// ============================================================
+
+const BLOOD_MARKERS = [
+  {key:'vitD',      label:'Vitamine D (25-OH)',    unit:'ng/mL', min:30, optimal:50, max:100,
+   advice: v => v < 20 ? "Carence severe — dose elevee (4000-6000 UI/j) justifiee. Recontroler dans 2 mois." :
+                v < 30 ? "Carence — augmenter a 4000 UI/j." :
+                v < 50 ? "Insuffisant — maintenir 3000-4000 UI/j." :
+                v < 80 ? "Optimal — 2000-3000 UI/j en maintenance." : "Tres eleve — reduire a 1000-2000 UI/j.",
+   suppl: 'vitD'},
+  {key:'zinc',      label:'Zinc plasmatique',      unit:'µmol/L', min:11, optimal:14, max:18,
+   advice: v => v < 11 ? "Carence — 25mg/j bisglycinate pendant 3 mois." :
+                v < 13 ? "Bas — 15-20mg/j." :
+                v < 18 ? "Correct — 10-15mg/j en maintenance." : "Eleve — arreter la supplementation.",
+   suppl: 'zinc'},
+  {key:'testosterone', label:'Testosterone totale', unit:'ng/mL', min:3, optimal:6, max:10,
+   advice: v => v < 3 ? "Bas — consulter un endocrinologue. Ashwagandha + zinc + D3 + sport de force prioritaires." :
+                v < 5 ? "Limite inferieur — protocole hormonal (ashwagandha, zinc, D3) a maximiser." :
+                v < 8 ? "Normal — maintenir le programme." : "Bon niveau — pas d'action specifique.",
+   suppl: 'testosterone'},
+  {key:'dhea',      label:'DHEA-S',               unit:'µg/dL', min:100, optimal:250, max:400,
+   advice: v => v < 100 ? "Taux tres bas — DHEA 25-50mg/j a envisager avec avis medical." :
+                v < 200 ? "Bas — DHEA 25mg/j peut etre benefique." :
+                v < 350 ? "Correct — pas de supplementation necessaire." : "Eleve — eviter la DHEA.",
+   suppl: 'dhea'},
+  {key:'ferritine', label:'Ferritine',             unit:'µg/L', min:30, optimal:80, max:200,
+   advice: v => v < 20 ? "Carence severe — supplementation en fer obligatoire + avis medical." :
+                v < 50 ? "Bas — surveiller, optimiser apports alimentaires." :
+                v < 150 ? "Bon niveau — pas de supplementation." : "Eleve — eviter tout supplement de fer.",
+   suppl: 'ferritine'},
+  {key:'crp',       label:'CRP ultra-sensible',   unit:'mg/L', min:0, optimal:0.5, max:3,
+   advice: v => v > 3 ? "Inflammation elevee — curcumine + omega-3 a maximiser. Identifier la source." :
+                v > 1 ? "Legere inflammation — curcumine 1000mg/j + omega-3 3g/j recommandes." :
+                "Optimal — maintenir le programme anti-inflammatoire.",
+   suppl: 'crp', lower_is_better: true},
+  {key:'glycemie',  label:'Glycemie a jeun',       unit:'mg/dL', min:70, optimal:85, max:100,
+   advice: v => v > 100 ? "Limite haute — reduire glucides rapides, magnesium + exercice prioritaires." :
+                v < 70 ? "Hypoglycemie — verifier apports glucidiques." : "Normal.",
+   suppl: 'glycemie'},
+  {key:'magnesium', label:'Magnesium (erythrocytes)', unit:'mmol/L', min:1.5, optimal:2, max:3,
+   advice: v => v < 1.5 ? "Carence — augmenter magnesium a 400mg/j, verifier l'absorption." :
+                v < 2 ? "Bas — maintenir 300mg/j." : "Correct — dose actuelle adaptee.",
+   suppl: 'magnesium'},
+];
+
+function renderBloodFields() {
+  const cont = document.getElementById('blood-fields');
+  if (!cont) return;
+  const blood = JSON.parse(localStorage.getItem('blood_results') || '{}');
+  cont.innerHTML = BLOOD_MARKERS.map(m => {
+    const val = blood[m.key] || '';
+    const hasVal = val !== '';
+    const numVal = parseFloat(val);
+    let statusColor = 'var(--muted)';
+    if (hasVal) {
+      if (m.lower_is_better) {
+        statusColor = numVal <= m.optimal ? 'var(--parve)' : numVal <= m.max ? 'var(--warn)' : 'var(--danger)';
+      } else {
+        statusColor = numVal >= m.optimal ? 'var(--parve)' : numVal >= m.min ? 'var(--warn)' : 'var(--danger)';
+      }
+    }
+    return '<div style="display:flex;flex-direction:column;gap:6px">' +
+      '<label style="font-size:11px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">' + m.label + '</label>' +
+      '<div style="display:flex;align-items:center;gap:6px">' +
+        '<input type="number" step="0.1" id="blood-' + m.key + '" value="' + val + '" placeholder="—"' +
+          ' style="background:var(--bg3);border:1px solid ' + (hasVal ? statusColor : 'var(--border)') + ';border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:14px;width:100%;min-width:0">' +
+        '<span style="font-size:11px;color:var(--muted);white-space:nowrap">' + m.unit + '</span>' +
+      '</div>' +
+      (hasVal ? '<div style="font-size:10px;color:' + statusColor + '">' + m.advice(numVal).split(' — ')[0] + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function saveBloodResults() {
+  const blood = {};
+  BLOOD_MARKERS.forEach(m => {
+    const el = document.getElementById('blood-' + m.key);
+    if (el && el.value) blood[m.key] = parseFloat(el.value);
+  });
+  localStorage.setItem('blood_results', JSON.stringify(blood));
+  renderBloodInterpretation();
+  renderBloodFields();
+  renderSuppl(); // refresh supplements with new data
+  showToast('Resultats sauvegardes — dosages mis a jour ✓');
+}
+
+function saveBloodDate() {
+  const d = document.getElementById('blood-date').value;
+  if (!d) return;
+  localStorage.setItem('last_blood_date', d);
+  const disp = document.getElementById('blood-date-display');
+  if (disp) disp.textContent = 'Enregistre le ' + new Date(d+'T12:00').toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'});
+  showToast('Date enregistree ✓');
+}
+
+function renderBloodInterpretation() {
+  const cont = document.getElementById('blood-interpretation');
+  if (!cont) return;
+  const blood = JSON.parse(localStorage.getItem('blood_results') || '{}');
+  const markers = BLOOD_MARKERS.filter(m => blood[m.key] !== undefined);
+  if (!markers.length) { cont.innerHTML = ''; return; }
+
+  const issues = [];
+  const ok = [];
+  markers.forEach(m => {
+    const v = parseFloat(blood[m.key]);
+    let status;
+    if (m.lower_is_better) {
+      status = v <= m.optimal ? 'ok' : v <= m.max ? 'warn' : 'bad';
+    } else {
+      status = v >= m.optimal ? 'ok' : v >= m.min ? 'warn' : 'bad';
+    }
+    if (status !== 'ok') issues.push({m, v, status});
+    else ok.push({m, v});
+  });
+
+  cont.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">' +
+    '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">Interpretation et recommandations</div>' +
+    (issues.length ? issues.map(({m,v,status}) =>
+      '<div style="padding:10px 14px;background:var(--bg3);border-radius:var(--r);margin-bottom:8px;border-left:3px solid ' + (status==='bad'?'var(--danger)':'var(--warn)') + '">' +
+        '<div style="font-size:13px;font-weight:600;color:' + (status==='bad'?'var(--danger)':'var(--warn)') + '">' + m.label + ' : ' + v + ' ' + m.unit + '</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6">' + m.advice(v) + '</div>' +
+      '</div>'
+    ).join('') : '') +
+    (ok.length ? '<div style="padding:10px 14px;background:rgba(144,216,184,.06);border-radius:var(--r);border-left:3px solid var(--parve)">' +
+      '<div style="font-size:12px;color:var(--parve)">✓ Marqueurs corrects : ' + ok.map(({m}) => m.label).join(', ') + '</div>' +
+    '</div>' : '') +
+  '</div>';
+}
+
+function renderBloodTest() {
+  renderBloodFields();
+  renderBloodInterpretation();
+  const lastBlood = localStorage.getItem('last_blood_date');
+  if (lastBlood) {
+    const el = document.getElementById('blood-date');
+    const disp = document.getElementById('blood-date-display');
+    if (el) el.value = lastBlood;
+    if (disp) disp.textContent = 'Enregistre le ' + new Date(lastBlood+'T12:00').toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'});
+  }
+}
+
 function showToast(msg) {
   let t = document.getElementById('toast');
   if (!t) { t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0e0f0d;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:200;transition:opacity .3s;pointer-events:none';document.body.appendChild(t); }
@@ -4160,6 +4462,7 @@ scheduleMidnightReset();
     <div class="burger-nav-item" onclick="showSection('recipes',this,true)"><span>🍳</span> Recettes</div>
     <div class="burger-nav-section">Info</div>
     <div class="burger-nav-item" onclick="showSection('suppl',this,true)"><span>💊</span> Compléments</div>
+    <div class="burger-nav-item" onclick="showSection('bloodtest',this,true)"><span>🩺</span> Bilan sanguin</div>
     <div class="burger-nav-section">Suivi</div>
     <div class="burger-nav-item" onclick="showSection('journal',this,true)"><span>📋</span> Journal</div>
     <div class="burger-nav-item" onclick="showSection('forme',this,true)"><span>😴</span> Forme</div>
