@@ -232,6 +232,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .dash-score{font-family:var(--font-mono);font-size:48px;font-weight:500;text-align:center;margin:8px 0}
 .dash-advice{font-size:13px;color:var(--muted);line-height:1.7;padding:12px 14px;background:var(--bg3);border-radius:var(--r);border-left:2px solid var(--accent)}
 .mini-chart{height:60px;background:var(--bg3);border-radius:var(--r);margin-top:8px;overflow:hidden;position:relative}
+.ingr-line{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.ingr-text{font-size:13px;color:var(--muted)}
+.ingr-text.substituted{color:var(--accent);text-decoration:line-through var(--muted);text-decoration-color:var(--muted)}
+.ingr-sub-btn{padding:1px 7px;font-size:10px;font-family:var(--font-mono);border:1px solid var(--border2);border-radius:20px;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s;flex-shrink:0}
+.ingr-sub-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ingr-sub-panel{width:100%;margin:4px 0 8px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);border-left:2px solid var(--accent)}
+.ingr-sub-options{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.ingr-sub-option{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s}
+.ingr-sub-option:hover{border-color:var(--accent)}
+.ingr-sub-name{font-size:13px;flex:1}
+.ingr-sub-macro{font-size:10px;color:var(--muted);font-family:var(--font-mono)}
+.ingr-subbed{font-size:12px;color:var(--accent);font-style:italic;margin-bottom:4px}
 .plan-updated-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(200,240,110,.12);border:1px solid #c8f06e44;border-radius:20px;font-size:11px;color:var(--accent);font-family:var(--font-mono);margin-top:8px}
 @media(max-width:768px){
   .app{grid-template-columns:1fr}
@@ -2117,8 +2129,8 @@ function renderPlan() {
               ${m.kcal > 0 ? `<span class="meal-kcal">${m.kcal} kcal</span>` : ''}
               <span class="meal-chevron">▾</span>
             </div>
-            <div class="meal-body">
-              <div class="meal-detail-text">${m.detail.replace(/\n/g,'<br>')}</div>
+             <div class="meal-body">
+              <div class="meal-detail-text" id="detail-${key}-${i}">${renderIngredients(m.detail, key, i)}</div>
               ${m.kcal > 0 ? `<div class="macros">
                 <span class="macro macro-p">P ${m.p}g</span>
                 <span class="macro macro-g">G ${m.g}g</span>
@@ -4396,6 +4408,225 @@ function renderBloodTest() {
     if (el) el.value = lastBlood;
     if (disp) disp.textContent = 'Enregistre le ' + new Date(lastBlood+'T12:00').toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'});
   }
+}
+
+// ============================================================
+// SUBSTITUTIONS D'INGRÉDIENTS
+// ============================================================
+
+// Substitution library — organised by ingredient category
+// Each entry: {name, macro: 'p|g|l', note, kasher}
+const SUBS = {
+  // PROTEINES VIANDE
+  'poulet': [
+    {name:'Dinde escalope', macro:'P32g G0 L3', note:'Profil identique, goût plus doux'},
+    {name:'Blanc de pintade', macro:'P31g G0 L4', note:'Plus savoureux, même usage'},
+    {name:'Steak haché 5%', macro:'P26g G0 L5', note:'Attention kasher — même cuisson'},
+    {name:'Tofu ferme (150g)', macro:'P17g G2 L9', note:'Option parve — moins de protéines'},
+  ],
+  'dinde': [
+    {name:'Blanc de poulet', macro:'P31g G0 L3', note:'Remplacement direct'},
+    {name:'Escalope de veau', macro:'P30g G0 L4', note:'Vérifier certification kasher'},
+    {name:'Filet de saumon', macro:'P25g G0 L13', note:'Parve — bon choix post-viande déjeuner'},
+  ],
+  'boeuf': [
+    {name:'Steak haché dinde 5%', macro:'P26g G0 L5', note:'Plus léger, même usage'},
+    {name:'Blanc de poulet haché', macro:'P31g G0 L3', note:'Option encore plus maigre'},
+    {name:'Lentilles (150g)', macro:'P14g G30 L0', note:'Option parve — glucides plus élevés'},
+  ],
+  // PROTEINES POISSON
+  'saumon': [
+    {name:'Truite (200g)', macro:'P27g G0 L11', note:'Profil très proche, kasher si certifié'},
+    {name:'Maquereau (160g)', macro:'P30g G0 L18', note:'Plus riche en oméga-3'},
+    {name:'Thon naturel (160g)', macro:'P46g G0 L2', note:'Beaucoup plus maigre'},
+    {name:'Cabillaud (200g)', macro:'P44g G0 L1', note:'Très maigre — ajouter un peu d\'huile'},
+  ],
+  'cabillaud': [
+    {name:'Merlu (200g)', macro:'P42g G0 L2', note:'Texture similaire, goût plus doux'},
+    {name:'Lieu noir (200g)', macro:'P40g G0 L2', note:'Moins cher, profil identique'},
+    {name:'Saumon (160g)', macro:'P40g G0 L21', note:'Plus gras — réduire l\'huile'},
+    {name:'Thon naturel (160g)', macro:'P46g G0 L2', note:'En boîte pour la praticité'},
+  ],
+  'thon': [
+    {name:'Sardines en boîte', macro:'P35g G0 L14', note:'Plus riches en oméga-3'},
+    {name:'Saumon en boîte', macro:'P38g G0 L18', note:'Même praticité'},
+    {name:'Maquereau en boîte', macro:'P32g G0 L16', note:'Excellent rapport oméga-3'},
+  ],
+  // FÉCULENTS
+  'riz': [
+    {name:'Quinoa (mêmes quantités)', macro:'G22 P4 L2 /100g', note:'Plus complet en acides aminés'},
+    {name:'Patate douce', macro:'G20 P1.6 L0 /100g', note:'Index glycémique plus bas'},
+    {name:'Sarrasin cuit', macro:'G19 P3.4 L0.8 /100g', note:'Sans gluten, bon choix'},
+    {name:'Lentilles corail', macro:'G16 P9 L0.4 /100g', note:'Plus de protéines'},
+  ],
+  'quinoa': [
+    {name:'Riz basmati', macro:'G26 P2.7 L0.3 /100g', note:'Remplacement direct'},
+    {name:'Boulgour', macro:'G23 P3.1 L0.2 /100g', note:'Vérifier si kasher selon usage'},
+    {name:'Millet', macro:'G23 P3.5 L1 /100g', note:'Sans gluten'},
+  ],
+  'patate douce': [
+    {name:'Potimarron rôti', macro:'G10 P1.5 L0.3 /100g', note:'Moins calorique, même douceur'},
+    {name:'Pomme de terre vapeur', macro:'G17 P2 L0.1 /100g', note:'Plus neutre'},
+    {name:'Panais rôti', macro:'G13 P1.3 L0.3 /100g', note:'Saveur douce, moins connue'},
+  ],
+  // LÉGUMES
+  'brocolis': [
+    {name:'Chou-fleur', macro:'G5 P1.9 L0.3 /100g', note:'Même usage, goût plus doux'},
+    {name:'Haricots verts', macro:'G7 P1.8 L0.1 /100g', note:'Texture différente, très bon'},
+    {name:'Courgettes', macro:'G3 P1.2 L0.3 /100g', note:'Plus léger'},
+    {name:'Épinards vapeur', macro:'G3 P2.9 L0.4 /100g', note:'Plus de fer'},
+  ],
+  'epinards': [
+    {name:'Blettes', macro:'G3.7 P1.8 L0.2 /100g', note:'Texture similaire'},
+    {name:'Mâche', macro:'G1 P1.8 L0.4 /100g', note:'En salade'},
+    {name:'Roquette', macro:'G2 P2.6 L0.7 /100g', note:'Plus piquante'},
+  ],
+  'courgettes': [
+    {name:'Concombre (cru)', macro:'G2 P0.7 L0.1 /100g', note:'Cru uniquement'},
+    {name:'Aubergine rôtie', macro:'G8 P1 L0.2 /100g', note:'Plus de volume'},
+    {name:'Poivrons grillés', macro:'G9 P1 L0.3 /100g', note:'Sucrés naturellement'},
+  ],
+  // AUTRES
+  'avocat': [
+    {name:'Houmous (80g)', macro:'G12 P5 L8', note:'Lipides similaires, plus de glucides'},
+    {name:'Tahini (2 c.s.)', macro:'G5 P5 L18', note:'Très calorique — réduire quantité'},
+    {name:'Noix (30g)', macro:'G4 P4 L19', note:'Lipides équivalents'},
+  ],
+  'oeufs': [
+    {name:'Tofu soyeux (3 parts)', macro:'G2 P9 L5', note:'Option parve similaire'},
+    {name:'Fromage blanc 0% (200g)', macro:'G7 P22 L0', note:'Attention lait — pas si repas viande'},
+    {name:'Protéine en poudre (30g)', macro:'G4 P25 L2', note:'Si juste pour les protéines'},
+  ],
+  'flocons': [
+    {name:'Flocons de sarrasin', macro:'G22 P4 L1.6 /100g', note:'Sans gluten, goût noisette'},
+    {name:'Muesli sans sucre (40g)', macro:'G27 P5 L4', note:'Moins pratique à doser'},
+    {name:'Chia + lait végétal (nuit)', macro:'G10 P5 L9 /40g', note:'Préparer la veille'},
+  ],
+  'dattes': [
+    {name:'Abricots secs (3 pièces)', macro:'G35 P1.5 L0.5 /50g', note:'Index glycémique plus bas'},
+    {name:'Banane', macro:'G23 P1.1 L0.3 /100g', note:'Très pratique, même effet'},
+    {name:'Raisins secs (30g)', macro:'G23 P0.8 L0.2', note:'Plus sucré — réduire quantité'},
+  ],
+  'lentilles': [
+    {name:'Pois chiches', macro:'G27 P9 L2.6 /100g cuits', note:'Remplacement direct'},
+    {name:'Haricots blancs', macro:'G24 P9 L0.5 /100g cuits', note:'Très protéiné'},
+    {name:'Tofu ferme (150g)', macro:'G2 P17 L9', note:'Option plus protéinée, moins de glucides'},
+  ],
+};
+
+// Map ingredient keywords to substitution categories
+const INGR_MAP = {
+  'poulet':'poulet', 'dinde':'dinde', 'boeuf':'boeuf', 'steak':'boeuf',
+  'saumon':'saumon', 'cabillaud':'cabillaud', 'thon':'thon',
+  'riz':'riz', 'quinoa':'quinoa', 'patate douce':'patate douce',
+  'brocolis':'brocolis', 'brocoli':'brocolis', 'epinards':'epinards',
+  'epinard':'epinards', 'courgettes':'courgettes', 'courgette':'courgettes',
+  'avocat':'avocat', 'oeufs':'oeufs', 'oeuf':'oeufs',
+  'flocons':'flocons', 'avoine':'flocons', 'dattes':'dattes', 'datte':'dattes',
+  'lentilles':'lentilles', 'lentille':'lentilles',
+};
+
+// User substitution preferences (persisted)
+function getSubPrefs() { return JSON.parse(localStorage.getItem('ingredient_subs') || '{}'); }
+function saveSubPrefs(p) { localStorage.setItem('ingredient_subs', JSON.stringify(p)); }
+
+function findSubCategory(word) {
+  const w = word.toLowerCase().replace(/[^a-zéèêëàâùûîïôç\s]/g,'').trim();
+  for (const [key, cat] of Object.entries(INGR_MAP)) {
+    if (w.includes(key)) return cat;
+  }
+  return null;
+}
+
+function renderIngredients(detail, dayKey, mealIdx) {
+  const prefs = getSubPrefs();
+  const prefKey = dayKey + '_' + mealIdx;
+
+  // Split on · and newlines, render each ingredient with sub button
+  const parts = detail.split(/\n/);
+  return parts.map((line, lineIdx) => {
+    if (!line.trim()) return '';
+    // Split ingredients within line by ·
+    const items = line.split(' · ');
+    const renderedItems = items.map((item, itemIdx) => {
+      const itemKey = prefKey + '_' + lineIdx + '_' + itemIdx;
+      const cat = findSubCategory(item);
+      const subbed = prefs[itemKey];
+
+      if (subbed) {
+        return '<span class="ingr-line">' +
+          '<span class="ingr-text" style="text-decoration:line-through;opacity:.5">' + item + '</span>' +
+          '<span style="font-size:11px;color:var(--accent)">→</span>' +
+          '<span class="ingr-text" style="color:var(--accent)">' + subbed.name + '</span>' +
+          '<button class="ingr-sub-btn" onclick="clearIngredientSub(\'' + itemKey + '\',\'' + dayKey + '\',' + mealIdx + ')" style="color:var(--danger)" title="Annuler">✕</button>' +
+        '</span>';
+      } else if (cat) {
+        return '<span class="ingr-line">' +
+          '<span class="ingr-text">' + item + '</span>' +
+          '<button class="ingr-sub-btn" onclick="showSubOptions(\'' + itemKey + '\',\'' + cat + '\',\'' + dayKey + '\',' + mealIdx + ',this)" title="Substituer">↔</button>' +
+        '</span>';
+      } else {
+        return '<span class="ingr-line"><span class="ingr-text">' + item + '</span></span>';
+      }
+    });
+    return '<div style="margin-bottom:2px">' + renderedItems.join('<span style="color:var(--border2);margin:0 4px">·</span>') + '</div>';
+  }).join('');
+}
+
+function showSubOptions(itemKey, cat, dayKey, mealIdx, btn) {
+  // Close any other open panel
+  document.querySelectorAll('.ingr-sub-panel').forEach(p => p.remove());
+
+  const options = SUBS[cat];
+  if (!options) return;
+
+  const panel = document.createElement('div');
+  panel.className = 'ingr-sub-panel';
+  panel.innerHTML =
+    '<div style="font-size:11px;color:var(--accent);font-family:var(--font-mono);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Choisir un substitut :</div>' +
+    '<div class="ingr-sub-options">' +
+    options.map((opt, idx) =>
+      '<div class="ingr-sub-option" onclick="applyIngredientSub(\'' + itemKey + '\',\'' + opt.name + '\',\'' + dayKey + '\',' + mealIdx + ',' + idx + ')">' +
+        '<span class="ingr-sub-name">' + opt.name + '</span>' +
+        '<span class="ingr-sub-macro">' + opt.macro + '</span>' +
+        '<span style="font-size:10px;color:var(--muted);margin-left:4px">' + opt.note + '</span>' +
+      '</div>'
+    ).join('') +
+    '</div>' +
+    '<button onclick="this.parentElement.remove()" style="margin-top:8px;padding:3px 10px;font-size:11px;background:transparent;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;color:var(--muted)">Annuler</button>';
+
+  // Insert after the current ingredient line
+  const line = btn.closest('.ingr-line');
+  if (line) {
+    line.parentNode.insertBefore(panel, line.nextSibling);
+  }
+}
+
+function applyIngredientSub(itemKey, subName, dayKey, mealIdx, subIdx) {
+  const cat = itemKey.split('_').slice(3).join('_'); // not needed but harmless
+  const prefs = getSubPrefs();
+  prefs[itemKey] = { name: subName, idx: subIdx };
+  saveSubPrefs(prefs);
+  // Re-render this meal's detail
+  refreshMealDetail(dayKey, mealIdx);
+  showToast(subName + ' substitué ✓');
+}
+
+function clearIngredientSub(itemKey, dayKey, mealIdx) {
+  const prefs = getSubPrefs();
+  delete prefs[itemKey];
+  saveSubPrefs(prefs);
+  refreshMealDetail(dayKey, mealIdx);
+  showToast('Substitution annulée');
+}
+
+function refreshMealDetail(dayKey, mealIdx) {
+  const day = CURRENT_PLAN && CURRENT_PLAN[dayKey];
+  if (!day) return;
+  const m = day.meals[mealIdx];
+  if (!m) return;
+  const el = document.getElementById('detail-' + dayKey + '-' + mealIdx);
+  if (el) el.innerHTML = renderIngredients(m.detail, dayKey, mealIdx);
 }
 
 function showToast(msg) {
