@@ -525,6 +525,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="filter-btn" onclick="filterShop('suppl',this)">Compléments</div>
       </div>
       <button class="clear-btn" onclick="clearChecked()">Tout décocher</button>
+      <button class="clear-btn" onclick="resetShoppingList()" style="color:var(--muted)" title="Recrée la liste depuis les menus actuels">↺ Réinitialiser</button>
     </div>
     <div class="progress-txt" id="shop-progress-txt">0 / 0 articles</div>
     <div class="progress-bar"><div class="progress-fill" id="shop-progress" style="width:0%"></div></div>
@@ -2206,6 +2207,15 @@ function filterShop(cat, el) {
 function clearChecked() {
   localStorage.setItem('shopping', '{}');
   renderShopping();
+}
+
+function resetShoppingList() {
+  if (!confirm('Réinitialiser la liste de courses depuis les menus actuels ?\nLes cases cochées seront effacées.')) return;
+  localStorage.setItem('shopping', '{}');
+  const p = getProfile();
+  CURRENT_SHOPPING = generateShopping(CURRENT_PLAN, p, CURRENT_RECIPES);
+  renderShopping();
+  showToast('Liste de courses réinitialisée ✓');
 }
 function updateProgress() {
   const checked = JSON.parse(localStorage.getItem('shopping') || '{}');
