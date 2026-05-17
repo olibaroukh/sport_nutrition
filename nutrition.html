@@ -3814,11 +3814,22 @@ async function startBarcodeScan() {
         } catch(e) {}
       }, 500);
     } else {
-      // Fallback: manual barcode entry
+      // Safari/iPhone fallback — search by product name or manual EAN
       document.getElementById('barcode-status').innerHTML =
-        'BarcodeDetector non disponible sur ce navigateur.<br>' +
-        '<input type="text" id="manual-barcode" placeholder="Saisis le code EAN..." style="margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;color:var(--text);font-size:14px;width:200px;font-family:var(--font-mono)">' +
-        '<button onclick="lookupBarcode(document.getElementById(\'manual-barcode\').value)" style="margin-left:6px;padding:6px 12px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-size:12px;font-family:var(--font-head);font-weight:700">Chercher</button>';
+        '<div style="text-align:left;margin-top:8px">' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Scan non disponible sur Safari — recherche par nom ou code :</div>' +
+        '<div style="display:flex;gap:6px;margin-bottom:8px">' +
+          '<input type="text" id="product-search" placeholder="Ex: yaourt nature Danone..." ' +
+            'style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-size:13px;min-width:0">' +
+          '<button onclick="searchProductByName()" style="padding:7px 12px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:12px;white-space:nowrap">Chercher</button>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<input type="text" id="manual-barcode" placeholder="Ou colle le code EAN (13 chiffres)" ' +
+            'style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:13px;min-width:0">' +
+          '<button onclick="lookupBarcode(document.getElementById(\'manual-barcode\').value)" style="padding:7px 12px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-size:12px;white-space:nowrap">OK</button>' +
+        '</div>' +
+        '<div id="product-search-results" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>' +
+        '</div>';
     }
   } catch(e) {
     document.getElementById('barcode-status').textContent = "Accès caméra refusé. Active les permissions caméra dans Safari/Chrome.";
@@ -3858,6 +3869,65 @@ async function lookupBarcode(code) {
   } catch(e) {
     document.getElementById('barcode-status').textContent = "Erreur réseau. Vérifie ta connexion.";
   }
+}
+
+async function searchProductByName() {
+  const query = (document.getElementById('product-search').value || '').trim();
+  if (!query) return;
+  const resultsEl = document.getElementById('product-search-results');
+  if (resultsEl) resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Recherche en cours...</div>';
+
+  try {
+    const url = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' +
+      encodeURIComponent(query) + '&search_simple=1&action=process&json=1&page_size=6&fields=product_name,brands,nutriments,code';
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const products = (data.products || []).filter(p => p.product_name && p.nutriments);
+
+    if (!products.length) {
+      if (resultsEl) resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Aucun résultat. Essaie un terme plus précis.</div>';
+      return;
+    }
+
+    if (resultsEl) resultsEl.innerHTML = products.map((p, idx) => {
+      const n = p.nutriments;
+      const kcal = Math.round(n['energy-kcal_100g'] || n['energy_100g']/4.184 || 0);
+      const prot = Math.round((n['proteins_100g']||0)*10)/10;
+      const carb = Math.round((n['carbohydrates_100g']||0)*10)/10;
+      const fat  = Math.round((n['fat_100g']||0)*10)/10;
+      const name = p.product_name + (p.brands ? ' — ' + p.brands : '');
+      const safeName = p.product_name.replace(/\\/g,'').replace(/'/g,'').replace(/"/g,'');
+      const safeCode = String(p.code || '');
+      return '<div onclick="selectSearchedProduct(' +
+        JSON.stringify(safeCode) + ',' + JSON.stringify(safeName + (p.brands ? ' — ' + p.brands : '')) + ',' +
+        kcal + ',' + prot + ',' + carb + ',' + fat + ')" ' +
+        'style="padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s" ' +
+        'onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">' +
+        '<div style="font-size:13px;font-weight:500">' + name + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-top:2px">' +
+          'Pour 100g : ' + kcal + ' kcal · P' + prot + 'g · G' + carb + 'g · L' + fat + 'g' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    if (resultsEl) resultsEl.innerHTML = '<div style="font-size:12px;color:var(--danger)">Erreur réseau. Vérifie ta connexion.</div>';
+  }
+}
+
+function selectSearchedProduct(code, name, kcal, prot, carb, fat) {
+  scannedProduct = { name, kcal, prot, carb, fat };
+  document.getElementById('barcode-result').style.display = 'block';
+  document.getElementById('barcode-result').innerHTML =
+    '<strong>' + name + '</strong>' +
+    '<br><span style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">Pour 100g : ' +
+    kcal + ' kcal · P' + prot + 'g · G' + carb + 'g · L' + fat + 'g</span>' +
+    '<br><div style="margin-top:8px;display:flex;align-items:center;gap:8px">' +
+    '<label style="font-size:12px;color:var(--muted)">Quantité (g) :</label>' +
+    '<input type="number" id="barcode-qty" value="100" min="1" max="2000" ' +
+      'style="width:80px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;color:var(--text);font-family:var(--font-mono);font-size:14px">' +
+    '</div>';
+  document.getElementById('barcode-confirm-btn').style.display = 'inline-block';
+  document.getElementById('barcode-status').textContent = 'Produit sélectionné ✓';
 }
 
 function confirmBarcodeProduct() {
