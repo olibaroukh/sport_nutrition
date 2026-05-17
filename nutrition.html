@@ -1325,8 +1325,8 @@ function generateDay(dayKey, profile, targets, foods, training) {
     pdj = {
       time: slots[0], name: "Oeufs · flocons · fruit leger", type: 'parve',
       kcal: 370, p: 28, g: 35, l: 14,
-      detail: "3 oeufs brouilles · 30g flocons d'avoine · 1 pomme · " + drink + z2Tip + "\nGlucides limites — reserves pour la seance.",
-      recipe: 'omelette'
+      detail: "3 oeufs brouilles · 30g flocons d'avoine (eau ou lait vegetal) · 1 pomme · " + drink + z2Tip + "\nGlucides limites — reserves pour la seance.",
+      recipe: 'oeufs-brouilles'
     };
   } else if ((modBelly || isLosing) && isRepos) {
     pdj = {
@@ -1337,10 +1337,10 @@ function generateDay(dayKey, profile, targets, foods, training) {
     };
   } else {
     pdj = {
-      time: slots[0], name: "Omelette · legumes · fruit", type: 'parve',
-      kcal: 350, p: 26, g: 28, l: 14,
-      detail: "3 oeufs · champignons + epinards · 1 tranche pain complet · 1 fruit · " + drink,
-      recipe: 'omelette'
+      time: slots[0], name: "Oeufs brouilles · Flocons · Pomme", type: 'parve',
+      kcal: 360, p: 27, g: 38, l: 16,
+      detail: "3 oeufs brouilles · 30g flocons d'avoine (eau ou lait vegetal) · 1 pomme · " + drink,
+      recipe: 'oeufs-brouilles'
     };
   }
   meals.push(pdj);
