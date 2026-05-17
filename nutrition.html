@@ -1533,6 +1533,18 @@ function generateRecipes(plan, profile) {
   const isMasse = obj === 'masse';
 
   const base = [
+    {id:'oeufs-brouilles', emoji:'🍳', name:'Oeufs brouillés · Flocons · Pomme', type:'parve', time:'10 min', diff:'Facile',
+     ingredients:["3 oeufs entiers","30g flocons d'avoine","90ml eau ou lait végétal parve (amande ou avoine de préférence)","1 pomme","1 c.c. huile d'olive ou margarine parve","Sel, poivre"],
+     steps:[
+       "Mettre les flocons dans un bol avec 90ml d'eau ou de lait végétal. Cuire 2 min au micro-ondes ou 4 min à la casserole à feu doux en remuant. Le lait végétal rend les flocons plus crémeux.",
+       "Battre les 3 oeufs à la fourchette avec sel et poivre.",
+       "Chauffer l'huile dans une petite poêle à feu doux — feu doux, c'est le secret des oeufs brouillés moelleux.",
+       "Verser les oeufs et remuer continuellement avec une spatule en faisant des 8. Ne jamais s'arrêter.",
+       "Retirer du feu quand les oeufs sont encore légèrement baveux — ils finissent de cuire seuls avec la chaleur résiduelle. Environ 3-4 min.",
+       "Servir immédiatement avec les flocons et la pomme coupée en quartiers.",
+     ],
+     macros:{p:27,g:38,l:16,kcal:360}},
+
     {id:'porridge', emoji:'🥣', name:'Porridge protéiné', type:'parve', time:'8 min', diff:'Facile',
      ingredients:[`${isMasse?60:40}g flocons d'avoine`,'30g protéine en poudre','1 banane',`${isMasse?20:15}g beurre de cacahuète`,'200ml eau ou lait végétal'],
      steps:['Cuire les flocons avec l\'eau 2 min au micro-ondes.','Laisser tiédir 2 min avant d\'ajouter la protéine en poudre.','Incorporer la protéine en mélangeant bien pour éviter les grumeaux.','Ajouter banane tranchée et beurre de cacahuète. Servir immédiatement.'],
