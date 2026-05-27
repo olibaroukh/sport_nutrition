@@ -483,6 +483,83 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
   <div style="padding:32px 40px">
     <div id="training-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px"></div>
+
+    <!-- GÉNÉRATEUR DE PROGRAMME — visible uniquement si aucune séance -->
+    <div id="program-generator" style="display:none;background:var(--bg2);border:1px solid var(--accent)44;border-radius:var(--r2);padding:24px;margin-bottom:24px">
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:700;margin-bottom:6px;color:var(--accent)">✨ Générer un programme automatiquement</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7">Tu n'as pas encore de séances. Renseigne tes préférences et l'appli crée un programme adapté.</div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px">
+        <div class="param-field"><label>Niveau</label>
+          <select id="gen-level">
+            <option value="debutant">Débutant</option>
+            <option value="intermediaire" selected>Intermédiaire</option>
+            <option value="avance">Avancé</option>
+          </select></div>
+        <div class="param-field"><label>Jours / semaine</label>
+          <select id="gen-days">
+            <option value="2">2 jours</option>
+            <option value="3">3 jours</option>
+            <option value="4" selected>4 jours</option>
+            <option value="5">5 jours</option>
+            <option value="6">6 jours</option>
+          </select></div>
+        <div class="param-field"><label>Durée par séance</label>
+          <select id="gen-duration">
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60" selected>1 heure</option>
+            <option value="90">1h30</option>
+          </select></div>
+        <div class="param-field"><label>Heure préférée</label>
+          <select id="gen-timing">
+            <option value="matin">Matin</option>
+            <option value="midi">Midi</option>
+            <option value="soir" selected>Soir</option>
+          </select></div>
+        <div class="param-field"><label>Focus principal</label>
+          <select id="gen-focus">
+            <option value="force_cardio" selected>Force + Cardio (Hyrox)</option>
+            <option value="force">Force pure</option>
+            <option value="cardio">Cardio / Endurance</option>
+            <option value="hypertrophie">Hypertrophie</option>
+            <option value="mobilite">Mobilité / Bien-être</option>
+            <option value="poids_corps">Poids de corps</option>
+          </select></div>
+      </div>
+
+      <!-- MATÉRIEL -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Matériel disponible</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px" id="gen-equip-checks">
+          ${[
+            {id:'barre',     label:'Barre + disques'},
+            {id:'halteres',  label:'Haltères'},
+            {id:'kettlebell',label:'Kettlebells'},
+            {id:'banc',      label:'Banc de musculation'},
+            {id:'cage',      label:'Cage / rack squat'},
+            {id:'traction',  label:'Barre de traction'},
+            {id:'anneaux',   label:'Anneaux / TRX'},
+            {id:'elastiques',label:'Élastiques'},
+            {id:'velo',      label:'Vélo (fixe ou home trainer)'},
+            {id:'rameur',    label:'Rameur'},
+            {id:'skierg',    label:'Ski erg'},
+            {id:'corde',     label:'Corde à sauter'},
+            {id:'wallball',  label:'Wall ball'},
+            {id:'boxe',      label:'Box / step'},
+            {id:'tapis',     label:'Tapis de course'},
+            {id:'rien',      label:'Aucun matériel'},
+          ].map(e => `<label style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:12px;user-select:none;transition:all .15s" id="equip-lbl-${e.id}">
+            <input type="checkbox" id="equip-${e.id}" onchange="updateEquipLabel('${e.id}')" style="display:none">
+            <span id="equip-dot-${e.id}" style="width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .15s"></span>
+            ${e.label}
+          </label>`).join('')}
+        </div>
+      </div>
+
+      <button onclick="generateProgram()" style="padding:10px 24px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">✨ Générer mon programme</button>
+      <div id="gen-preview" style="margin-top:16px"></div>
+    </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">+ Ajouter une séance</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -1725,7 +1802,7 @@ function addTrainingSession() {
   const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
   sessions.sort((a,b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) || a.time.localeCompare(b.time));
   saveTrainingSessions(sessions);
-  document.getElementById('new-t-notes').value = '';
+  const ntEl = document.getElementById('new-t-notes'); if(ntEl) ntEl.value='';
   renderTraining();
   showToast('Séance ajoutée ✓');
 }
@@ -1764,9 +1841,11 @@ function renderTraining() {
   if (!grid) return;
   const sessions = getTrainingSessions();
   if (!sessions.length) {
-    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Aucune séance. Ajoute ta première séance ci-dessous.</div>';
+    grid.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Aucune séance. Ajoute ta première séance ci-dessous ou génère un programme automatiquement.</div>';
+    document.getElementById('program-generator').style.display = 'block';
     return;
   }
+  document.getElementById('program-generator').style.display = 'none';
 
   // Group by day for display
   const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -2374,8 +2453,8 @@ function addWeight() {
   else arr.push({date:d,val:v,note:n});
   arr.sort((a,b) => a.date.localeCompare(b.date));
   saveWeights(arr);
-  document.getElementById('weight-val').value = '';
-  document.getElementById('weight-note').value = '';
+  const wv=document.getElementById('weight-val'); if(wv) wv.value='';
+  const wn=document.getElementById('weight-note'); if(wn) wn.value='';
   renderWeight();
 }
 function deleteWeight(date) { saveWeights(getWeights().filter(w => w.date !== date)); renderWeight(); }
@@ -2562,9 +2641,9 @@ function selectObj(el) {
 function loadSettings() {
   const s = getProfile();
   const fields = ['sex','age','height','weight','goal','sessions','activity','diet','sport','stress','sleep','constraints','drink'];
-  if (s.wakeup) document.getElementById('p-wakeup').value = s.wakeup;
-  if (s.breakfastDelay) document.getElementById('p-breakfast-delay').value = s.breakfastDelay;
-  if (s.trainingtime) document.getElementById('p-trainingtime').value = s.trainingtime;
+  if (s.wakeup) { const el=document.getElementById('p-wakeup'); if(el) el.value=s.wakeup; }
+  if (s.breakfastDelay) { const el=document.getElementById('p-breakfast-delay'); if(el) el.value=s.breakfastDelay; }
+  if (s.trainingtime) { const el=document.getElementById('p-trainingtime'); if(el) el.value=s.trainingtime; }
   fields.forEach(f => { const el=document.getElementById('p-'+f); if(el && s[f]) el.value=s[f]; });
   if (s.targetDate) document.getElementById('p-date').value = s.targetDate;
   if (s.objective) {
@@ -2790,7 +2869,7 @@ function addFreeFood() {
   saved.free = saved.free || [];
   saved.free.push({name, kcal, p, g, l});
   localStorage.setItem(getJournalKey(date), JSON.stringify(saved));
-  ['free-food-name','free-food-kcal','free-food-p','free-food-g','free-food-l'].forEach(id => document.getElementById(id).value = '');
+  ['free-food-name','free-food-kcal','free-food-p','free-food-g','free-food-l'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderJournal();
 }
 
@@ -3471,12 +3550,7 @@ function savePerfEntry() {
   savePerfEntries(all);
 
   // Reset forms
-  document.getElementById('wod-desc').value = '';
-  document.getElementById('wod-result-val').value = '';
-  document.getElementById('wod-note').value = '';
-  document.getElementById('force-note').value = '';
-  document.getElementById('hyrox-total').value = '';
-  document.getElementById('hyrox-splits').value = '';
+  ['wod-desc','wod-result-val','wod-note','force-note','hyrox-total','hyrox-splits'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
 
   renderPerf();
   showToast('Performance enregistrée ✓');
@@ -4710,6 +4784,410 @@ function refreshMealDetail(dayKey, mealIdx) {
   const el = document.getElementById('detail-' + dayKey + '-' + mealIdx);
   if (el) el.innerHTML = renderIngredients(m.detail, dayKey, mealIdx);
 }
+
+// ============================================================
+// GÉNÉRATEUR DE PROGRAMME D'ENTRAÎNEMENT
+// ============================================================
+
+// ============================================================
+// GÉNÉRATEUR DE PROGRAMME
+// ============================================================
+
+function updateEquipLabel(id) {
+  const cb = document.getElementById('equip-'+id);
+  const lbl = document.getElementById('equip-lbl-'+id);
+  const dot = document.getElementById('equip-dot-'+id);
+  if (!cb || !lbl || !dot) return;
+  if (cb.checked) {
+    lbl.style.borderColor = 'var(--accent)';
+    lbl.style.background = 'rgba(200,240,110,.1)';
+    dot.style.background = 'var(--accent)';
+  } else {
+    lbl.style.borderColor = 'var(--border)';
+    lbl.style.background = 'var(--bg3)';
+    dot.style.background = 'var(--border2)';
+  }
+}
+
+function getEquip() {
+  const ids = ['barre','halteres','kettlebell','banc','cage','traction','anneaux',
+               'elastiques','velo','rameur','skierg','corde','wallball','boxe','tapis','rien'];
+  return ids.filter(id => { const el = document.getElementById('equip-'+id); return el && el.checked; });
+}
+
+// ---- EXERCISE LIBRARY ----
+// Format: {name, sets, reps, duration, note}
+const EXERCISES = {
+  // FORCE BARBELL
+  deadlift:     {name:'Soulevé de terre',           req:['barre'], sets:'4', reps:'5',   duration:null, note:'Tempo 2-1-1. Dos droit, regard horizon.'},
+  squat:        {name:'Squat barre',                req:['barre','cage'], sets:'4', reps:'6',  duration:null, note:'Descente sous parallèle. Genoux dans l\'axe.'},
+  bench:        {name:'Développé couché',           req:['barre','banc'], sets:'4', reps:'6',  duration:null, note:'Coudes à 45°. Omoplate serrées.'},
+  row_barre:    {name:'Rowing barre',               req:['barre'], sets:'4', reps:'8',   duration:null, note:'Dos plat, tirage vers le nombril.'},
+  ohp:          {name:'Développé militaire',        req:['barre'], sets:'4', reps:'6',   duration:null, note:'Core gaîné, pas de lordose.'},
+  rdl:          {name:'Deadlift roumain',           req:['barre'], sets:'3', reps:'10',  duration:null, note:'Hanches en arrière, barre proche des jambes.'},
+  // HALTÈRES
+  dbpress:      {name:'Développé haltères',         req:['halteres','banc'], sets:'4', reps:'10', duration:null, note:'Rotation des poignets en remontant.'},
+  dbrow:        {name:'Rowing haltère 1 bras',      req:['halteres'], sets:'3', reps:'12',   duration:null, note:'Genou et main sur le banc. Tirage coude haut.'},
+  dblunge:      {name:'Fentes haltères',            req:['halteres'], sets:'3', reps:'10',   duration:null, note:'Genou avant dans l\'axe du pied. Pas trop vers l\'avant.'},
+  dblateral:    {name:'Élévations latérales',       req:['halteres'], sets:'3', reps:'15',   duration:null, note:'Légère flexion coude. Montée jusqu\'à l\'horizontale.'},
+  dbbicurl:     {name:'Curl haltères',              req:['halteres'], sets:'3', reps:'12',   duration:null, note:'Coudes fixes le long du corps.'},
+  dbtriceps:    {name:'Extension triceps haltère',  req:['halteres'], sets:'3', reps:'12',   duration:null, note:'Coude pointé vers le plafond.'},
+  // KETTLEBELL
+  kb_swing:     {name:'KB Swing',                   req:['kettlebell'], sets:'4', reps:'15',  duration:null, note:'Poussée des hanches explosive. Dos plat, regard devant.'},
+  kb_goblet:    {name:'KB Goblet squat',            req:['kettlebell'], sets:'3', reps:'12',  duration:null, note:'KB tenu sous le menton. Descente profonde.'},
+  kb_press:     {name:'KB Press un bras',           req:['kettlebell'], sets:'3', reps:'10',  duration:null, note:'Poignet droit, épaule engagée.'},
+  kb_tgu:       {name:'Turkish Get-Up',             req:['kettlebell'], sets:'3', reps:'5',   duration:null, note:'5 répétitions par côté. Lent et contrôlé.'},
+  kb_clean:     {name:'KB Clean',                   req:['kettlebell'], sets:'3', reps:'8',   duration:null, note:'Mouvement de hanche, pas de bras.'},
+  kb_farmer:    {name:'Farmer carry',               req:['kettlebell'], sets:'3', reps:null,  duration:'30 sec', note:'Marche avec KB lourds. Épaules basses et en arrière.'},
+  kb_snatch:    {name:'KB Snatch',                  req:['kettlebell'], sets:'3', reps:'6',   duration:null, note:'Mouvement fluide. Poignet en rotation au sommet.'},
+  // CARDIO MACHINES
+  rameur_int:   {name:'Rameur fractionné',          req:['rameur'], sets:'8', reps:null, duration:'1 min effort / 1 min repos', note:'Effort max sur les fractionnés. Technique : jambes-dos-bras.'},
+  rameur_z2:    {name:'Rameur Zone 2',              req:['rameur'], sets:'1', reps:null, duration:'30-45 min', note:'FC 130-145 bpm. Cadence régulière ~24 coups/min.'},
+  skierg_int:   {name:'Ski erg fractionné',         req:['skierg'], sets:'6', reps:null, duration:'2 min effort / 90 sec repos', note:'Tirer avec tout le corps. Hanches en premier.'},
+  skierg_z2:    {name:'Ski erg Zone 2',             req:['skierg'], sets:'1', reps:null, duration:'20-30 min', note:'Allure constante et tenable. Technique prioritaire.'},
+  velo_int:     {name:'Vélo fractionné',            req:['velo'], sets:'8', reps:null, duration:'30 sec sprint / 90 sec récup', note:'Résistance élevée sur les sprints. Récup à résistance légère.'},
+  velo_z2:      {name:'Vélo Zone 2',                req:['velo'], sets:'1', reps:null, duration:'45-60 min', note:'FC 130-145 bpm. Cadence ~80-90 rpm. Conversation possible.'},
+  tapis_z2:     {name:'Tapis de course Zone 2',     req:['tapis'], sets:'1', reps:null, duration:'30-45 min', note:'Allure conversationnelle. Légère inclinaison 1-2%.'},
+  // CARDIO CORPS
+  burpees:      {name:'Burpees',                    req:[], sets:'4', reps:'10',  duration:null, note:'Mouvement complet : saut + pompe. Rythme soutenu.'},
+  jump_rope:    {name:'Corde à sauter',             req:['corde'], sets:'5', reps:null, duration:'2 min', note:'Alterner simple et double under. Récup 30 sec entre séries.'},
+  box_jump:     {name:'Box jump',                   req:['boxe'], sets:'4', reps:'8', duration:null, note:'Atterrissage souple, genoux fléchis. Descente contrôlée.'},
+  wall_ball:    {name:'Wall ball',                  req:['wallball'], sets:'4', reps:'20', duration:null, note:'Squat profond + lancer en extension complète. Cible haute.'},
+  // POIDS DE CORPS
+  pushup:       {name:'Pompes',                     req:[], sets:'4', reps:'15',  duration:null, note:'Corps gainé de la tête aux pieds. Coudes à 45°.'},
+  pullup:       {name:'Tractions',                  req:['traction'], sets:'4', reps:'max', duration:null, note:'Amplitude complète. Pas d\'élan.'},
+  dip:          {name:'Dips',                       req:['traction'], sets:'3', reps:'12',  duration:null, note:'Légère inclinaison avant pour les pectoraux.'},
+  squat_bw:     {name:'Squats poids de corps',      req:[], sets:'4', reps:'20',  duration:null, note:'Descente lente (3 sec), remontée explosive.'},
+  lunge_bw:     {name:'Fentes alternées',           req:[], sets:'3', reps:'12',  duration:null, note:'Pas vers l\'avant ou l\'arrière selon préférence.'},
+  // GAINAGE
+  plank:        {name:'Planche frontale',           req:[], sets:'4', reps:null, duration:'45 sec', note:'Bassin ni trop haut ni trop bas. Respiration continue.'},
+  plank_lat:    {name:'Planche latérale',           req:[], sets:'3', reps:null, duration:'30 sec', note:'3×30 sec par côté. Hanche décollée du sol.'},
+  hollow:       {name:'Hollow body hold',           req:[], sets:'4', reps:null, duration:'30 sec', note:'Dos collé au sol. Bras et jambes tendus effleurant le sol.'},
+  deadbug:      {name:'Dead bug',                   req:[], sets:'3', reps:'10', duration:null, note:'10 répétitions par côté. Dos à plat. Mouvements lents.'},
+  pallof:       {name:'Pallof press (élastique)',   req:['elastiques'], sets:'3', reps:'12', duration:null, note:'Anti-rotation. Tension constante sur l\'élastique.'},
+  ab_wheel:     {name:'Gainage anti-extension',     req:[], sets:'3', reps:'10', duration:null, note:'Progression : genou → debout. Dos droit tout au long.'},
+  // MOBILITE DETAILLEE
+  // HANCHES
+  mob_hip_flexor: {name:'Étirement fléchisseurs hanches (fente basse)', req:[], sets:'3', reps:null, duration:'45 sec / côté', note:'Bassin poussé vers l\'avant et vers le bas. Respiration abdominale.'},
+  mob_pigeon:     {name:'Pigeon au sol (rotation externe hanche)',       req:[], sets:'3', reps:null, duration:'60 sec / côté', note:'Jambe avant à 90° si possible. Ne pas forcer — tenir la position.'},
+  mob_hip_circle: {name:'Cercles de hanches (90/90)',                   req:[], sets:'3', reps:'10', duration:null, note:'10 rotations internes + 10 rotations externes par côté.'},
+  mob_cossack:    {name:'Squat cosaque (mobilité adducteurs)',           req:[], sets:'3', reps:'8', duration:null, note:'Glisser latéralement en gardant le pied à plat. Tenir 2 sec en bas.'},
+  mob_hip_hinge:  {name:'Hip hinge avec bâton (pattern deadlift)',      req:[], sets:'3', reps:'12', duration:null, note:'Bâton dans le dos : contact tête, dos, coccyx. Hanches en arrière.'},
+  // EPAULES
+  mob_shoulder_openers: {name:'Ouvertures épaules avec bâton ou serviette', req:[], sets:'3', reps:'15', duration:null, note:'Prise large. Passer derrière la tête sans douleur. Réduire la prise progressivement.'},
+  mob_shoulder_rotcuff: {name:'Rotation coiffe des rotateurs (élastique)', req:['elastiques'], sets:'3', reps:'15', duration:null, note:'Rotation interne + externe. Coude collé au corps.'},
+  mob_wall_slide:       {name:'Wall slide (mobilité scapulaire)',          req:[], sets:'3', reps:'12', duration:null, note:'Dos et bras contre le mur. Glisser les bras vers le haut sans décoller.'},
+  mob_chest_opener:     {name:'Ouverture pectoraux (sol ou banc)',         req:[], sets:'3', reps:null, duration:'60 sec', note:'Bras en T ou en Y. Laisser la pesanteur travailler. Respiration lente.'},
+  mob_band_pull:        {name:'Band pull apart (élastique)',               req:['elastiques'], sets:'4', reps:'20', duration:null, note:'Omoplates vers la colonne. Bras tendus, pas de compensation.'},
+  // THORACIQUE
+  mob_thoracic_rot:     {name:'Rotation thoracique au sol (thread the needle)', req:[], sets:'3', reps:'10', duration:null, note:'10 rotations par côté. Hanche stable. Regard suit la main.'},
+  mob_foam_thoracic:    {name:'Extension thoracique sur rouleau (ou serviette roulée)', req:[], sets:'3', reps:null, duration:'60 sec / niveau', note:'3 positions : bas, milieu, haut du dos. Bras croisés sur poitrine.'},
+  mob_cat_cow:          {name:'Chat-vache (mobilité colonne)',             req:[], sets:'3', reps:'12', duration:null, note:'Respiration : inspiration en vache, expiration en chat. Lent.'},
+  mob_thoracic_ext:     {name:'Extension thoracique au sol (bras levés)', req:[], sets:'3', reps:'12', duration:null, note:'Face au sol. Mains derrière la tête. Décoller uniquement le thorax.'},
+  // CHEVILLES ET ISCHIO
+  mob_ankle:     {name:'Mobilité cheville (knee to wall)',               req:[], sets:'3', reps:'15', duration:null, note:'15 répétitions par côté. Progresser vers le mur.'},
+  mob_hamstring: {name:'Étirement ischios-jambiers (PNF)',               req:[], sets:'3', reps:null, duration:'30 sec contraction + 30 sec relâchement', note:'Contracter 30 sec contre résistance puis relâcher. Gain rapide de souplesse.'},
+  mob_calf:      {name:'Étirement mollets (droit + soléaire)',           req:[], sets:'3', reps:null, duration:'45 sec / position', note:'Jambe droite (genou tendu) puis jambe fléchie (soléaire).'},
+  // RESPIRATION ET GAINAGE PROFOND
+  mob_breathing: {name:'Respiration diaphragmatique (360°)',             req:[], sets:'5', reps:null, duration:'5 respirations profondes', note:'Main sur le ventre. Expansion dans toutes les directions. Expiration complète.'},
+  mob_tvA:       {name:'Activation transverse (vacuum)',                 req:[], sets:'3', reps:'10', duration:'10 sec hold', note:'Rentrer le nombril vers la colonne. Retenir sans apnée. Excellent pour le ventre.'},
+};
+
+// ---- SEANCE TEMPLATES DÉTAILLÉS ----
+const SESSION_LIBRARY = {
+  // FORCE + CARDIO (HYROX)
+  hyrox_seance: (equip, level, duration) => ({
+    type:'hyrox', name:'Séance Hyrox — Cardio-force',
+    blocks:[
+      {title:'Échauffement (10 min)', exercises:[
+        {name:'Rameur ou corde à sauter', sets:'1', reps:null, duration:'5 min', note:'Allure légère.'},
+        {name:'Mobilité dynamique hanches + épaules', sets:'2', reps:'10', duration:null, note:'Cercles bras, fentes dynamiques, rotations.'},
+      ]},
+      {title:'Circuit principal ('+Math.max(20, duration-20)+' min)', exercises:[
+        equip.includes('skierg') ? EXERCISES.skierg_int : equip.includes('rameur') ? EXERCISES.rameur_int : EXERCISES.burpees,
+        equip.includes('wallball') ? EXERCISES.wall_ball : EXERCISES.squat_bw,
+        equip.includes('kettlebell') ? EXERCISES.kb_swing : EXERCISES.lunge_bw,
+        equip.includes('traction') ? EXERCISES.pullup : EXERCISES.pushup,
+        equip.includes('boxe') ? EXERCISES.box_jump : EXERCISES.burpees,
+      ]},
+      {title:'Gainage + Récupération (10 min)', exercises:[
+        EXERCISES.hollow, EXERCISES.plank_lat,
+        {name:'Marche de récupération ou vélo léger', sets:'1', reps:null, duration:'5 min', note:'FC < 120 bpm.'},
+      ]},
+    ]
+  }),
+
+  force_bas: (equip, level, duration) => ({
+    type:'force', name:'Force — Bas du corps',
+    blocks:[
+      {title:'Échauffement (8 min)', exercises:[
+        EXERCISES.mob_hip_hinge, EXERCISES.mob_ankle, EXERCISES.mob_hip_circle,
+      ]},
+      {title:'Force principale ('+Math.max(25, duration-25)+' min)', exercises:[
+        equip.includes('barre') && equip.includes('cage') ? EXERCISES.squat : equip.includes('halteres') ? EXERCISES.dblunge : EXERCISES.squat_bw,
+        equip.includes('barre') ? EXERCISES.deadlift : equip.includes('kettlebell') ? EXERCISES.kb_swing : EXERCISES.lunge_bw,
+        equip.includes('barre') ? EXERCISES.rdl : equip.includes('halteres') ? {name:'Fentes haltères marchées', ...EXERCISES.dblunge} : EXERCISES.lunge_bw,
+      ]},
+      {title:'Accessoires + Gainage (15 min)', exercises:[
+        equip.includes('kettlebell') ? EXERCISES.kb_goblet : EXERCISES.squat_bw,
+        EXERCISES.deadbug, EXERCISES.plank, EXERCISES.mob_hamstring,
+      ]},
+    ]
+  }),
+
+  force_haut: (equip, level, duration) => ({
+    type:'force', name:'Force — Haut du corps',
+    blocks:[
+      {title:'Échauffement (8 min)', exercises:[
+        EXERCISES.mob_shoulder_openers, EXERCISES.mob_wall_slide, EXERCISES.mob_band_pull,
+      ]},
+      {title:'Force principale ('+Math.max(25, duration-25)+' min)', exercises:[
+        equip.includes('barre') && equip.includes('banc') ? EXERCISES.bench : equip.includes('halteres') && equip.includes('banc') ? EXERCISES.dbpress : EXERCISES.pushup,
+        equip.includes('traction') ? EXERCISES.pullup : equip.includes('barre') ? EXERCISES.row_barre : equip.includes('halteres') ? EXERCISES.dbrow : {name:'Australiennes (traction inversée)', ...EXERCISES.pushup},
+        equip.includes('barre') ? EXERCISES.ohp : equip.includes('halteres') ? EXERCISES.dblateral : EXERCISES.pushup,
+      ]},
+      {title:'Accessoires (15 min)', exercises:[
+        equip.includes('halteres') ? EXERCISES.dbbicurl : EXERCISES.pushup,
+        equip.includes('halteres') ? EXERCISES.dbtriceps : EXERCISES.dip,
+        EXERCISES.pallof.req.every(r => equip.includes(r)) ? EXERCISES.pallof : EXERCISES.plank_lat,
+        EXERCISES.mob_chest_opener,
+      ]},
+    ]
+  }),
+
+  kettlebell_circuit: (equip, level, duration) => ({
+    type:'kettlebell', name:'Circuit Kettlebell',
+    blocks:[
+      {title:'Échauffement (8 min)', exercises:[
+        EXERCISES.mob_hip_hinge, EXERCISES.mob_shoulder_openers, EXERCISES.mob_thoracic_rot,
+      ]},
+      {title:'Circuit principal — '+Math.floor((duration-20)/5)+' rounds', exercises:[
+        EXERCISES.kb_swing, EXERCISES.kb_clean, EXERCISES.kb_goblet, EXERCISES.kb_press, EXERCISES.kb_farmer,
+      ]},
+      {title:'Finisher (10 min)', exercises:[
+        EXERCISES.kb_snatch, EXERCISES.hollow, EXERCISES.mob_pigeon,
+      ]},
+    ]
+  }),
+
+  cardio_interval: (equip, level, duration) => ({
+    type:'cardio', name:'Cardio — Fractionnés',
+    blocks:[
+      {title:'Échauffement (10 min)', exercises:[
+        {name:'Cardio léger progressif', sets:'1', reps:null, duration:'8 min', note:'Commencer à 60% FC max, monter progressivement.'},
+        EXERCISES.mob_ankle,
+      ]},
+      {title:'Fractionnés ('+Math.max(20, duration-20)+' min)', exercises:[
+        equip.includes('rameur') ? EXERCISES.rameur_int : equip.includes('skierg') ? EXERCISES.skierg_int : equip.includes('velo') ? EXERCISES.velo_int : equip.includes('tapis') ? {name:'Course fractionnée',sets:'8',reps:null,duration:'1 min effort / 90 sec récup',note:'Vitesse max sur les efforts. Récup active.'} : {name:'Burpees + corde',sets:'8',reps:null,duration:'40 sec effort / 20 sec repos',note:'Effort maximal sur chaque série.'},
+      ]},
+      {title:'Retour au calme (8 min)', exercises:[
+        {name:'Cardio très léger', sets:'1', reps:null, duration:'5 min', note:'FC < 110 bpm.'},
+        EXERCISES.mob_calf, EXERCISES.mob_hamstring,
+      ]},
+    ]
+  }),
+
+  cardio_z2: (equip, level, duration) => ({
+    type:'cardio', name:'Cardio — Zone 2',
+    blocks:[
+      {title:'Zone 2 continue ('+duration+' min)', exercises:[
+        equip.includes('velo') ? EXERCISES.velo_z2 : equip.includes('rameur') ? EXERCISES.rameur_z2 : equip.includes('skierg') ? EXERCISES.skierg_z2 : equip.includes('tapis') ? EXERCISES.tapis_z2 : {name:'Marche rapide extérieur',sets:'1',reps:null,duration:duration+' min',note:'Allure soutenue mais tenable. FC 130-145 bpm. Conversation possible.'},
+      ]},
+      {title:'Mobilité post-cardio (10 min)', exercises:[
+        EXERCISES.mob_calf, EXERCISES.mob_hamstring, EXERCISES.mob_hip_flexor, EXERCISES.mob_breathing,
+      ]},
+    ]
+  }),
+
+  mobilite_complete: (equip, level, duration) => ({
+    type:'yoga', name:'Mobilité complète',
+    blocks:[
+      {title:'Activation et respiration (5 min)', exercises:[
+        EXERCISES.mob_breathing, EXERCISES.mob_tvA, EXERCISES.mob_cat_cow,
+      ]},
+      {title:'Hanches et bas du corps (15 min)', exercises:[
+        EXERCISES.mob_hip_flexor, EXERCISES.mob_pigeon, EXERCISES.mob_cossack,
+        EXERCISES.mob_hamstring, EXERCISES.mob_ankle,
+      ]},
+      {title:'Thoracique et épaules (15 min)', exercises:[
+        EXERCISES.mob_thoracic_rot, EXERCISES.mob_foam_thoracic, EXERCISES.mob_thoracic_ext,
+        EXERCISES.mob_shoulder_openers, EXERCISES.mob_chest_opener,
+        equip.includes('elastiques') ? EXERCISES.mob_band_pull : EXERCISES.mob_wall_slide,
+      ]},
+      {title:'Gainage profond (10 min)', exercises:[
+        EXERCISES.hollow, EXERCISES.deadbug, EXERCISES.plank_lat,
+        equip.includes('elastiques') ? EXERCISES.pallof : EXERCISES.plank,
+      ]},
+    ]
+  }),
+
+  mobilite_courte: (equip, level, duration) => ({
+    type:'yoga', name:'Mobilité — routine express',
+    blocks:[
+      {title:'Routine mobilité ('+duration+' min)', exercises:[
+        EXERCISES.mob_breathing,
+        EXERCISES.mob_hip_flexor, EXERCISES.mob_pigeon,
+        EXERCISES.mob_thoracic_rot, EXERCISES.mob_shoulder_openers,
+        EXERCISES.mob_hamstring, EXERCISES.mob_ankle,
+        EXERCISES.hollow, EXERCISES.deadbug,
+      ]},
+    ]
+  }),
+};
+
+// ---- PROGRAM PLANS par focus ----
+function buildProgram(focus, days, equip, level, duration) {
+  const hasBarre = equip.includes('barre');
+  const hasKb = equip.includes('kettlebell');
+  const hasCardioMachine = equip.includes('velo') || equip.includes('rameur') || equip.includes('skierg') || equip.includes('tapis');
+  const hasHyrox = equip.includes('skierg') || equip.includes('wallball') || equip.includes('boxe');
+
+  const DAYS_ORDER = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+  const plans = {
+    force_cardio: {
+      2: ['hyrox_seance', 'force_bas'],
+      3: ['hyrox_seance', 'force_bas', 'force_haut'],
+      4: ['hyrox_seance', 'force_bas', 'force_haut', 'cardio_z2'],
+      5: ['hyrox_seance', 'force_bas', 'kettlebell_circuit', 'force_haut', 'cardio_z2'],
+      6: ['hyrox_seance', 'force_bas', 'kettlebell_circuit', 'force_haut', 'cardio_interval', 'cardio_z2'],
+    },
+    force: {
+      2: ['force_bas', 'force_haut'],
+      3: ['force_bas', 'force_haut', 'force_bas'],
+      4: ['force_bas', 'force_haut', 'force_bas', 'force_haut'],
+      5: ['force_bas', 'force_haut', 'kettlebell_circuit', 'force_bas', 'force_haut'],
+      6: ['force_bas', 'force_haut', 'force_bas', 'force_haut', 'kettlebell_circuit', 'mobilite_courte'],
+    },
+    cardio: {
+      2: ['cardio_interval', 'cardio_z2'],
+      3: ['cardio_interval', 'cardio_z2', 'cardio_interval'],
+      4: ['cardio_interval', 'cardio_z2', 'cardio_interval', 'cardio_z2'],
+      5: ['cardio_interval', 'cardio_z2', 'cardio_interval', 'cardio_z2', 'cardio_interval'],
+      6: ['cardio_interval', 'cardio_z2', 'cardio_interval', 'cardio_z2', 'cardio_interval', 'mobilite_courte'],
+    },
+    hypertrophie: {
+      2: ['force_haut', 'force_bas'],
+      3: ['force_haut', 'force_bas', 'force_haut'],
+      4: ['force_haut', 'force_bas', 'force_haut', 'force_bas'],
+      5: ['force_haut', 'force_bas', 'force_haut', 'force_bas', 'kettlebell_circuit'],
+      6: ['force_haut', 'force_bas', 'force_haut', 'force_bas', 'kettlebell_circuit', 'mobilite_courte'],
+    },
+    mobilite: {
+      2: ['mobilite_complete', 'mobilite_courte'],
+      3: ['mobilite_complete', 'cardio_z2', 'mobilite_complete'],
+      4: ['mobilite_complete', 'cardio_z2', 'mobilite_complete', 'cardio_z2'],
+      5: ['mobilite_complete', 'cardio_z2', 'mobilite_complete', 'cardio_z2', 'mobilite_courte'],
+      6: ['mobilite_complete', 'cardio_z2', 'mobilite_complete', 'cardio_z2', 'mobilite_courte', 'mobilite_courte'],
+    },
+    poids_corps: {
+      2: ['force_haut', 'force_bas'],
+      3: ['force_haut', 'force_bas', 'cardio_interval'],
+      4: ['force_haut', 'force_bas', 'kettlebell_circuit', 'mobilite_courte'],
+      5: ['force_haut', 'force_bas', 'kettlebell_circuit', 'cardio_interval', 'mobilite_courte'],
+      6: ['force_haut', 'force_bas', 'kettlebell_circuit', 'cardio_interval', 'mobilite_complete', 'cardio_z2'],
+    },
+  };
+
+  const plan = plans[focus] || plans.force_cardio;
+  const sessionKeys = plan[Math.min(6, Math.max(2, days))] || plan[4];
+
+  // Map days
+  const activeDays = DAYS_ORDER.slice(0, days);
+  // For rest days insert rest day between sessions
+  const spread = [];
+  if (days <= 3) {
+    const gaps = {2:[0,3], 3:[0,2,4]};
+    (gaps[days]||[0,2,4]).forEach((d,i) => spread.push({dayIdx:d, sessionKey:sessionKeys[i]||sessionKeys[0]}));
+  } else {
+    sessionKeys.forEach((sk, i) => spread.push({dayIdx:i, sessionKey:sk}));
+  }
+
+  return spread.map(({dayIdx, sessionKey}) => {
+    const builder = SESSION_LIBRARY[sessionKey];
+    if (!builder) return null;
+    const session = builder(equip, level, duration);
+    return { day: DAYS_ORDER[dayIdx % 7], ...session };
+  }).filter(Boolean);
+}
+
+function getEquip() {
+  const ids = ['barre','halteres','kettlebell','banc','cage','traction','anneaux',
+               'elastiques','velo','rameur','skierg','corde','wallball','boxe','tapis','rien'];
+  return ids.filter(id => { const el = document.getElementById('equip-'+id); return el && el.checked; });
+}
+
+function renderSessionPreview(session) {
+  const typeIcons = {force:'🔱',hyrox:'🏃',cardio:'🫁',kettlebell:'🪃',yoga:'🧘',crossfit:'🏋️'};
+  return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:10px">' +
+    '<div style="padding:10px 14px;background:var(--bg3);display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:16px">'+(typeIcons[session.type]||'⚡')+'</span>' +
+      '<div>' +
+        '<div style="font-family:var(--font-head);font-size:14px;font-weight:700">' + session.day + ' — ' + session.name + '</div>' +
+      '</div>' +
+    '</div>' +
+    session.blocks.map(block =>
+      '<div style="padding:10px 14px;border-top:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">' + block.title + '</div>' +
+        block.exercises.map(ex => {
+          const vol = ex.sets ? ex.sets + '×' + (ex.reps||ex.duration) : ex.duration;
+          return '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">' +
+            '<span style="font-family:var(--font-mono);font-size:11px;color:var(--info);min-width:60px;flex-shrink:0">' + vol + '</span>' +
+            '<span style="font-size:13px;font-weight:500">' + ex.name + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-left:68px;margin-bottom:8px;line-height:1.5">' + ex.note + '</div>';
+        }).join('') +
+      '</div>'
+    ).join('') +
+  '</div>';
+}
+
+function generateProgram() {
+  const level    = document.getElementById('gen-level').value;
+  const days     = parseInt(document.getElementById('gen-days').value);
+  const duration = parseInt(document.getElementById('gen-duration').value);
+  const timing   = document.getElementById('gen-timing').value;
+  const focus    = document.getElementById('gen-focus').value;
+  const equip    = getEquip();
+
+  if (!equip.length) {
+    showToast('Coche au moins un équipement !');
+    return;
+  }
+
+  const sessions = buildProgram(focus, days, equip, level, duration);
+  const timeMap  = {matin:'07:30', midi:'12:30', soir:'20:30'};
+  const baseTime = timeMap[timing] || '20:30';
+
+  const preview = document.getElementById('gen-preview');
+  preview.innerHTML =
+    '<div style="margin-bottom:14px;padding:10px 14px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--muted)">' +
+      '📋 Programme généré : <strong style="color:var(--text)">' + sessions.length + ' séances</strong> · ' +
+      duration + ' min · Matériel : ' + equip.join(', ') +
+    '</div>' +
+    sessions.map(renderSessionPreview).join('') +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">' +
+      '<button onclick="applyGeneratedProgram()" style="padding:9px 20px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">✓ Appliquer ce programme</button>' +
+      '<button onclick="generateProgram()" style="padding:9px 16px;background:var(--bg3);color:var(--muted);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px">↺ Regénérer</button>' +
+    '</div>';
+
+  // Store for apply
+  window._pendingProgram = sessions.map(s => ({
+    day: s.day, type: s.type, time: baseTime, duration: duration,
+    notes: s.blocks.map(b => b.title + ' : ' + b.exercises.map(e => e.name).join(', ')).join(' | ')
+  }));
+}
+
+function applyGeneratedProgram() {
+  if (!window._pendingProgram || !window._pendingProgram.length) return;
+  saveTrainingSessions(window._pendingProgram);
+  window._pendingProgram = null;
+  document.getElementById('program-generator').style.display = 'none';
+  document.getElementById('gen-preview').innerHTML = '';
+  renderTraining();
+  showToast('Programme appliqué ✓ — recalcule le plan nutritionnel dans Paramètres');
+}
+
 
 function showToast(msg) {
   let t = document.getElementById('toast');
