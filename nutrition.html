@@ -5521,4 +5521,77 @@ scheduleMidnightReset();
 </div>
 
 </body>
+<script>
+// ---- SERVICE WORKER INLINE ----
+if ('serviceWorker' in navigator) {
+  // Build SW code as a blob URL — no separate file needed
+  const CACHE_NAME = 'nutrition-v2026.06.25-1';
+  const swCode = `
+const CACHE = '${CACHE_NAME}';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+self.addEventListener('fetch', e => {
+  if (e.request.mode === 'navigate') {
+    // For navigation — network first, fallback to cache
+    e.respondWith(
+      fetch(e.request, {cache: 'no-cache'})
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request))
+    );
+  }
+});
+// Listen for skipWaiting message from page
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+});
+`;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swUrl).then(reg => {
+    // Check for updates every 30 min
+    setInterval(() => reg.update(), 1800000);
+
+    // If a new SW is waiting, show update banner
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          const banner = document.getElementById('update-banner');
+          if (banner) banner.style.display = 'flex';
+        }
+      });
+    });
+  }).catch(() => {});
+
+  // When user clicks "Mettre à jour"
+  window.applyUpdate = function() {
+    exportData();
+    setTimeout(() => {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg && reg.waiting) {
+          reg.waiting.postMessage('skipWaiting');
+        }
+        location.reload(true);
+      });
+    }, 800);
+  };
+}
+</script>
 </html>
