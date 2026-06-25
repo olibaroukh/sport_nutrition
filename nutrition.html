@@ -2350,18 +2350,17 @@ function renderPlan() {
         const moments = {'Matin':[], 'Pre-seance':[], 'Post-seance':[], 'Soir':[]};
         suppls.filter(s => s.phase <= 2 && s.name !== 'Protocole anti-cortisol — ventre resistant').forEach(s => {
           const t = s.timing || '';
-          if (t.includes('Post-s') || t.includes('post-s')) moments['Post-seance'].push(s);
-          else if (t.includes('Pre-s') || t.includes('pre-s') || t.includes('Autour')) moments['Pre-seance'].push(s);
-          else if (t.includes('Soir') || t.includes('coucher')) moments['Soir'].push(s);
-          else moments['Matin'].push(s);
+          if (t.includes('Post-s') || t.includes('post-s')) moments['Post-seance'].push({...s});
+          else if (t.includes('Pre-s') || t.includes('pre-s') || t.includes('Autour')) moments['Pre-seance'].push({...s});
+          else if (t.includes('Soir') || t.includes('coucher')) moments['Soir'].push({...s});
+          else moments['Matin'].push({...s});
         });
-        // Add cortisol reminders inline
         if (cortisolMode) {
-          moments['Soir'].push({name:'Sommeil 7h+ priorite absolue', dose:'', phase:2});
-          if (!moments['Soir'].some(s => s.name.includes('feculent')))
-            moments['Matin'].push({name:'Zero feculent apres 20h', dose:'', phase:2});
+          moments['Soir'].push({name:'Sommeil 7h+ priorite absolue', dose:'', phase:3});
+          moments['Matin'].push({name:'Zero feculent apres 20h', dose:'', phase:3});
         }
-        const labelMap = {'Matin':'Matin','Pre-seance':'Pre-seance','Post-seance':'Post-seance','Soir':'Soir'};
+        const phaseColor = ph => ph === 1 ? 'var(--muted)' : ph === 2 ? 'var(--info)' : 'var(--warn)';
+        const renderItem = s => '<span style="display:block;color:' + phaseColor(s.phase||1) + '">— ' + s.name + (s.dose ? ' ' + s.dose.split('/')[0] : '') + '</span>';
         return Object.entries(moments)
           .filter(([mom, list]) => {
             if (!list.length) return false;
@@ -2369,9 +2368,9 @@ function renderPlan() {
             return true;
           })
           .map(([mom, list]) =>
-            '<strong>' + labelMap[mom] + ' :</strong><br>' +
-            list.map(s => '&nbsp;&nbsp;— ' + s.name + (s.dose ? ' ' + s.dose.split('/')[0] : '')).join('<br>')
-          ).join('<br><br>');
+            '<strong style="color:var(--text)">' + mom + ' :</strong><br>' +
+            list.map(renderItem).join('')
+          ).join('<br>');
       })()}</div>
       ${(()=>{
         const h = getHydration(p, day);
