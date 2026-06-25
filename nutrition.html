@@ -1594,7 +1594,7 @@ function generateDay(dayKey, profile, targets, foods, training) {
 
   // DESSERT — yaourt ou fromage blanc les soirs parve/poisson
   // Pas après viande (kasher), pas en objectif strict sèche jour de repos
-  const hasDessert = diner.type !== 'viande' && !(strictBelly && isRepos);
+  const hasDessert = !(strictBelly && isRepos); // dessert tous les jours sauf strict+repos
   if (hasDessert) {
     const desserts = [
       {name:'Fromage blanc 0%', detail:'150g fromage blanc 0% · optionnel : quelques gouttes de miel ou 1 c.c. cannelle', kcal:80, p:12, g:5, l:0},
@@ -1602,12 +1602,15 @@ function generateDay(dayKey, profile, targets, foods, training) {
       {name:'Skyr nature', detail:'150g skyr · très riche en protéines · optionnel : zeste de citron', kcal:95, p:15, g:6, l:0},
     ];
     const dessert = desserts[Math.abs(dayKey.charCodeAt(0)) % desserts.length];
+    const kasherNote = diner.type === 'viande'
+      ? '\n⚠️ Kasher : attendre 3-6h apres la viande. Ou choisir yaourt soja/coco (parve).'
+      : '\n✓ Parve — compatible avec le diner poisson/parve.';
     meals.push({
       time: minToTime(timeToMin(slots[isSport ? 3 : 2]) + 30),
       name: dessert.name + ' · dessert',
       type: 'parve',
       kcal: dessert.kcal, p: dessert.p, g: dessert.g, l: dessert.l,
-      detail: dessert.detail + '\n✓ Parve — compatible avec le dîner poisson/parve.',
+      detail: dessert.detail + kasherNote,
       recipe: null
     });
   }
@@ -2002,7 +2005,8 @@ function generateSupplements(profile) {
   const isVegan = p.diet === 'vegan';
   const isVege = p.diet === 'vegetarien' || isVegan;
   const isMasse = obj === 'masse';
-  const hasHeavyTraining = countTrainingSessions() >= 3;
+  const sessionCount = countTrainingSessions() || parseInt(p.sessions||0);
+  const hasHeavyTraining = sessionCount >= 3;
   const isLosing = obj === 'seche' || obj === 'perte';
   const age50plus = age >= 45;
   const age35plus = age >= 35;
@@ -2108,7 +2112,17 @@ function generateSupplements(profile) {
     });
   }
 
-  // ASHWAGANDHA — homme 35+ objectif perte/seche/performance
+  // CORTISOL PROTOCOL — toujours affiché si 40+ avec objectif perte
+  if (age >= 40 && isLosing) {
+    suppls.push({
+      emoji: '🎯', name: 'Protocole anti-cortisol — ventre résistant',
+      timing: 'Plusieurs moments — voir détail', dose: 'Combinaison de compléments phase 2',
+      role: "Le cortisol chronique est le principal frein à la perte abdominale après 40 ans. Il favorise le stockage des graisses au niveau du ventre même avec un bon déficit calorique.",
+      kasher: "Tous les compléments ci-dessous ont des versions kasher disponibles.",
+      note: "PROTOCOLE COMPLET :\n• Ashwagandha KSM-66 (300-600mg soir) — réduit le cortisol basal chronique\n• Phosphatidylserine (400-800mg post-séance) — réduit le pic de cortisol après effort intense (deadlift, Hyrox)\n• Magnésium glycinate (300mg soir) — améliore le sommeil et régule le cortisol nocturne\n• Oméga-3 (2-3g matin) — action anti-inflammatoire qui réduit la réponse au stress\n• Sommeil 7h+ PRIORITÉ ABSOLUE — un seul mauvais nuit augmente le cortisol de 37%\n• Zéro féculent après 20h — évite le pic insuline nocturne qui potentialise le cortisol",
+      phase: 2
+    });
+  }
   if (!isFemme && age35plus && (isLosing || obj === 'performance')) {
     suppls.push({
       emoji: '🌿', name: 'Ashwagandha KSM-66',
