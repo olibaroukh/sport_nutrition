@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-2">
+<meta name="app-version" content="2026.06.25-3">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1493,7 +1493,7 @@ function generateDay(dayKey, profile, targets, foods, training) {
       time: slots[1],
       name: viandeMain.name.charAt(0).toUpperCase()+viandeMain.name.slice(1) + " · " + carbMain.name.replace(" cuit","").replace(" cuites","") + " · " + veg1,
       type: 'viande',
-      kcal: Math.round(qty*viandeMain.g100p*0.04 + qty*viandeMain.g100l*0.09 + carbQty*carbMain.g100c*0.04 + carbQty*carbMain.g100p*0.04 + 60),
+      kcal: Math.round(qty*viandeMain.g100p*0.04 + qty*viandeMain.g100l*0.09 + carbQty*(carbMain.g100c+carbMain.g100p)*0.04 + 140),
       p:    Math.round(qty*viandeMain.g100p/100 + carbQty*carbMain.g100p/100),
       g:    Math.round(carbQty*carbMain.g100c/100),
       l:    Math.round(qty*viandeMain.g100l/100 + 10),
@@ -1576,7 +1576,7 @@ function generateDay(dayKey, profile, targets, foods, training) {
       diner = {
         time: slots[3], type: 'viande',
         name: v.name.charAt(0).toUpperCase()+v.name.slice(1) + " · " + dVeg1 + " · " + dVeg2,
-        kcal: Math.round(qty*v.g100p*0.04 + qty*v.g100l*0.09 + 60 + carbSoir*1.5),
+        kcal: Math.round(qty*v.g100p*0.04 + qty*v.g100l*0.09 + 120 + carbSoir*4),
         p: Math.round(qty*v.g100p/100), g: carbSoir, l: Math.round(qty*v.g100l/100 + 10),
         detail: qty + "g " + v.name + " · " + dVeg1 + " + " + dVeg2 + " vapeur · huile d'olive" + (carbSoir > 0 ? " · " + carbSoir + "g riz brun" : "") + noCardNote,
         recipe: 'viande-legumes-soir'
@@ -2350,7 +2350,9 @@ function renderPlan() {
         const moments = {'Matin':[], 'Pre-seance':[], 'Post-seance':[], 'Soir':[]};
         suppls.filter(s => s.phase <= 2 && !s.name.includes('anti-cortisol')).forEach(s => {
           const t = s.timing || '';
-          const cleanDose = (s.dose || '').split('/')[0].trim();
+          // Clean dose: take only the first segment before any space-slash pattern
+          const raw = s.dose || '';
+          const cleanDose = raw.replace(/\s*[·•].*$/, '').split('/')[0].trim();
           const item = {...s, cleanDose};
           if (t.includes('Post-s') || t.includes('post-s')) moments['Post-seance'].push(item);
           else if (t.includes('Pre-s') || t.includes('pre-s') || t.includes('Autour')) moments['Pre-seance'].push(item);
@@ -2363,7 +2365,7 @@ function renderPlan() {
         }
         const phaseColor = ph => ph === 1 ? 'var(--muted)' : ph === 2 ? 'var(--info)' : 'var(--warn)';
         const renderItem = s =>
-          '<span style="display:block;color:' + phaseColor(s.phase||1) + '">— ' + s.name + (s.cleanDose ? ' ' + s.cleanDose : '') + '</span>';
+          '<span style="display:block;margin-left:0;color:' + phaseColor(s.phase||1) + '">— ' + s.name + (s.cleanDose ? ' ' + s.cleanDose : '') + '</span>';
         return Object.entries(moments)
           .filter(([mom, list]) => {
             if (!list.length) return false;
@@ -2371,7 +2373,7 @@ function renderPlan() {
             return true;
           })
           .map(([mom, list]) =>
-            '<span style="display:block;margin-top:10px;margin-bottom:2px"><strong style="color:var(--text)">' + mom + ' :</strong></span>' +
+            '<span style="display:block;margin-top:12px;margin-bottom:3px"><strong style="color:var(--text)">' + mom + ' :</strong></span>' +
             list.map(renderItem).join('')
           ).join('');
       })()}</div>
