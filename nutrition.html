@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-3">
+<meta name="app-version" content="2026.06.25-4">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -71,7 +71,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .macro-p{color:var(--info);border-color:#6eb8f033}.macro-g{color:var(--warn);border-color:#f0c86e33}.macro-l{color:var(--parve);border-color:#90d8b833}
 .recipe-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:5px 12px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;color:var(--muted);background:transparent;transition:all .15s;font-family:var(--font-body)}
 .recipe-btn:hover{color:var(--accent);border-color:#c8f06e66}
-.suppl-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--muted)}
+.suppl-bar{display:block;margin-top:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--muted);line-height:1.9}
 .suppl-bar strong{color:var(--text)}
 .sleep-bar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 16px;border-left:2px solid var(--info);font-size:12px;color:var(--muted);background:var(--bg3);border-radius:0 var(--r) var(--r) 0}
 .sleep-bar strong{color:var(--info)}
@@ -2350,9 +2350,9 @@ function renderPlan() {
         const moments = {'Matin':[], 'Pre-seance':[], 'Post-seance':[], 'Soir':[]};
         suppls.filter(s => s.phase <= 2 && !s.name.includes('anti-cortisol')).forEach(s => {
           const t = s.timing || '';
-          // Clean dose: take only the first segment before any space-slash pattern
+          // Clean dose: keep only first meaningful part (number + unit)
           const raw = s.dose || '';
-          const cleanDose = raw.replace(/\s*[·•].*$/, '').split('/')[0].trim();
+          const cleanDose = raw.replace(/\s+(curcumine|piperine|par prise|objectif|en poudre).*$/i, '').split('/')[0].trim();
           const item = {...s, cleanDose};
           if (t.includes('Post-s') || t.includes('post-s')) moments['Post-seance'].push(item);
           else if (t.includes('Pre-s') || t.includes('pre-s') || t.includes('Autour')) moments['Pre-seance'].push(item);
