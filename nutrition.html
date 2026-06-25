@@ -914,6 +914,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button onclick="calcAndApply()" style="padding:10px 22px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:14px">⚡ Calculer et adapter le plan</button>
       <button onclick="saveSettings()" style="padding:10px 22px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:14px">Sauvegarder sans recalculer</button>
+
+    <!-- EXPORT / IMPORT -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">💾 Sauvegarde des données</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">Exporte toutes tes données avant une mise à jour de l'appli. Poids, performances, journal, mensurations — tout est sauvegardé dans un fichier JSON.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button onclick="exportData()" style="padding:9px 18px;background:var(--info);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:13px">📤 Exporter mes données</button>
+        <label style="padding:9px 18px;background:var(--bg3);color:var(--muted);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px">
+          📥 Importer une sauvegarde
+          <input type="file" id="import-file" accept=".json" onchange="importData(this)" style="display:none">
+        </label>
+      </div>
+      <div id="import-status" style="margin-top:8px;font-size:12px;color:var(--muted);font-family:var(--font-mono)"></div>
+    </div>
+
+    <!-- GUIDE DÉPLACEMENT ISRAËL -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">✈️ Guide déplacement — Israël</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--parve)">Avantages :</strong> Tout est kasher, protéines partout, salades généreuses, poisson excellent.<br><br>
+        <strong style="color:var(--text)">Petit-déjeuner hôtel (buffet)</strong><br>
+        <span style="color:var(--muted)">→ Priorité : oeufs (brouillés, durs, omelette) + légumes + fromage blanc / labneh. Éviter : viennoiseries, céréales sucrées, jus de fruits. Le buffet israélien est une mine d'or pour le plan.</span><br><br>
+        <strong style="color:var(--text)">Déjeuner au restaurant</strong><br>
+        <span style="color:var(--muted)">→ Salade + grillade (poulet, viande) ou poisson. Demander le féculent à part. Houmous en entrée = excellent. Éviter les sauces sucrées (amba, ketchup).</span><br><br>
+        <strong style="color:var(--text)">Tentations à gérer</strong><br>
+        <span style="color:var(--muted)">→ Baklava, halva, bourekas, jus de grenade frais. Règle : un seul écart par jour maximum. Le jus de fruits frais = sucre rapide, à éviter en dehors des pré-séances.</span><br><br>
+        <strong style="color:var(--text)">Shabbat / repas familiaux</strong><br>
+        <span style="color:var(--muted)">→ Même stratégie qu'en France : viande + légumes + un seul féculent. Le challah : une tranche, pas plus. Profite du repas sans culpabiliser — c'est la convivialité qui compte.</span><br><br>
+        <strong style="color:var(--text)">Hydratation</strong><br>
+        <span style="color:var(--muted)">→ Chaleur = +500ml minimum par rapport au plan. Eau plate, pas de sodas. Eau gazeuse sans sucre OK.</span><br><br>
+        <strong style="color:var(--accent)">Objectif semaine Israël : maintenir, pas perdre.</strong> Si tu reviens au même poids c'est une victoire.
+      </div>
+    </div>
     </div>
 
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px" id="notif-block">
@@ -1559,6 +1592,26 @@ function generateDay(dayKey, profile, targets, foods, training) {
   }
   meals.push(diner);
 
+  // DESSERT — yaourt ou fromage blanc les soirs parve/poisson
+  // Pas après viande (kasher), pas en objectif strict sèche jour de repos
+  const hasDessert = diner.type !== 'viande' && !(strictBelly && isRepos);
+  if (hasDessert) {
+    const desserts = [
+      {name:'Fromage blanc 0%', detail:'150g fromage blanc 0% · optionnel : quelques gouttes de miel ou 1 c.c. cannelle', kcal:80, p:12, g:5, l:0},
+      {name:'Yaourt nature', detail:'150g yaourt nature · optionnel : 1 c.c. cannelle ou quelques fruits rouges', kcal:90, p:8, g:7, l:2},
+      {name:'Skyr nature', detail:'150g skyr · très riche en protéines · optionnel : zeste de citron', kcal:95, p:15, g:6, l:0},
+    ];
+    const dessert = desserts[Math.abs(dayKey.charCodeAt(0)) % desserts.length];
+    meals.push({
+      time: minToTime(timeToMin(slots[isSport ? 3 : 2]) + 30),
+      name: dessert.name + ' · dessert',
+      type: 'parve',
+      kcal: dessert.kcal, p: dessert.p, g: dessert.g, l: dessert.l,
+      detail: dessert.detail + '\n✓ Parve — compatible avec le dîner poisson/parve.',
+      recipe: null
+    });
+  }
+
   const totalP    = meals.reduce((s,m) => s+m.p, 0);
   const totalG    = meals.reduce((s,m) => s+m.g, 0);
   const totalL    = meals.reduce((s,m) => s+m.l, 0);
@@ -2060,11 +2113,23 @@ function generateSupplements(profile) {
     suppls.push({
       emoji: '🌿', name: 'Ashwagandha KSM-66',
       timing: 'Soir — avec le diner ou au coucher', dose: '300-600mg/jour',
-      role: "Reduit le cortisol chronique · Soutient la testosterone naturelle · Qualite du sommeil" + (age50plus ? " · Particulierement efficace apres 45 ans avec programme intensif et stress pro" : ""),
-      kasher: "Verifier excipients et source. Certains extraits sont certifiables.",
-      note: "Choisir extrait standardise KSM-66 (pas n'importe quel ashwagandha). Prendre le soir — effet anxiolytique et recuperateur. Resultats sur cortisol visibles en 4-6 semaines.",
+      role: "Reduit le cortisol chronique · Soutient la testosterone naturelle · Qualite du sommeil" + (age50plus ? " · Particulierement efficace apres 45 ans avec programme intensif" : ""),
+      kasher: "Verifier excipients. Extraits standardises KSM-66 generalement sans probleme.",
+      note: "Choisir extrait standardise KSM-66 uniquement. Prendre le soir. Resultats sur cortisol visibles en 4-6 semaines. Particulierement utile si ventre resistant malgre bon deficit.",
       phase: 2
     });
+
+    // Phosphatidylserine — cortisol post-exercice intense
+    if (hasHeavyTraining && age50plus) {
+      suppls.push({
+        emoji: '🧠', name: 'Phosphatidylserine (PS)',
+        timing: 'Post-seance ou avec le diner', dose: '400-800mg/jour',
+        role: "Reduit le pic de cortisol post-exercice intense · Protege le muscle en deficit · Ameliore la recuperation cognitive et physique · Tres efficace avec deadlift lourd et Hyrox",
+        kasher: "Forme vegetale (tournesol) disponible — verifier source. Eviter forme soja si preference.",
+        note: "A prendre le soir apres les grosses seances (deadlift, Hyrox). Effet mesurable sur le cortisol post-effort en 2-3 semaines. Complement sous-connu mais etudes solides.",
+        phase: 2
+      });
+    }
   }
 
   // CURCUMINE + PIPERINE
@@ -5188,6 +5253,57 @@ function applyGeneratedProgram() {
   showToast('Programme appliqué ✓ — recalcule le plan nutritionnel dans Paramètres');
 }
 
+
+// ============================================================
+// EXPORT / IMPORT DONNÉES
+// ============================================================
+
+function exportData() {
+  const keys = [
+    'settings','weights','measurements','forme_entries','perf_entries',
+    'blood_results','last_blood_date','training_sessions','shopping',
+    'ingredient_subs','movement_goals','notifEnabled','weightReminderEnabled',
+  ];
+  // Also get all journal entries
+  const data = {};
+  keys.forEach(k => { const v = localStorage.getItem(k); if(v) data[k] = v; });
+  // Journal entries (journal_YYYY-MM-DD)
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('journal_')) data[k] = localStorage.getItem(k);
+  }
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const date = new Date().toISOString().split('T')[0];
+  const a = document.createElement('a');
+  a.href = url; a.download = 'nutrition-backup-' + date + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Données exportées ✓');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      let count = 0;
+      Object.entries(data).forEach(([k, v]) => {
+        localStorage.setItem(k, v);
+        count++;
+      });
+      const st = document.getElementById('import-status');
+      if (st) st.textContent = '✓ ' + count + ' entrées restaurées. Recharge la page pour voir les données.';
+      showToast('Données importées ✓ — recharge la page');
+    } catch(err) {
+      const st = document.getElementById('import-status');
+      if (st) st.textContent = '✗ Fichier invalide — vérifie que c\'est bien un fichier .json exporté depuis cette appli.';
+    }
+  };
+  reader.readAsText(file);
+}
 
 function showToast(msg) {
   let t = document.getElementById('toast');
