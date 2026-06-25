@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="app-version" content="2026.06.25-1">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -444,6 +445,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="stat-row"><span class="stat-label">Cible</span><span class="stat-val">mi-juillet</span></div>
   </div>
 </aside>
+
+<!-- MISE À JOUR BANNER -->
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--accent);color:#0e0f0d;padding:12px 16px;align-items:center;justify-content:space-between;gap:12px;font-family:var(--font-head);font-size:13px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.4)">
+  <span>🔄 Nouvelle version disponible</span>
+  <div style="display:flex;gap:8px">
+    <button onclick="applyUpdate()" style="padding:6px 14px;background:#0e0f0d;color:var(--accent);border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:12px">Mettre à jour</button>
+    <button onclick="dismissUpdate()" style="padding:6px 10px;background:transparent;color:#0e0f0d;border:1px solid #0e0f0d44;border-radius:var(--r);cursor:pointer;font-size:12px">Plus tard</button>
+  </div>
+</div>
 
 <main class="main">
 
@@ -5368,6 +5378,46 @@ function importData(input) {
   };
   reader.readAsText(file);
 }
+
+// ============================================================
+// MISE À JOUR AUTOMATIQUE
+// ============================================================
+
+const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content || '0';
+
+async function checkForUpdate() {
+  try {
+    // Fetch the live page with cache-busting
+    const resp = await fetch(location.href + '?v=' + Date.now(), {cache: 'no-store'});
+    const html = await resp.text();
+    const match = html.match(/name="app-version"\s+content="([^"]+)"/);
+    if (match && match[1] && match[1] !== APP_VERSION) {
+      const banner = document.getElementById('update-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+  } catch(e) {
+    // Silently fail — offline or network issue
+  }
+}
+
+function applyUpdate() {
+  // Export data first as safety net, then reload without cache
+  exportData();
+  setTimeout(() => {
+    location.reload(true);
+  }, 800);
+}
+
+function dismissUpdate() {
+  const banner = document.getElementById('update-banner');
+  if (banner) banner.style.display = 'none';
+  // Check again in 1 hour
+  setTimeout(checkForUpdate, 3600000);
+}
+
+// Check on load after 3 seconds, then every 30 minutes
+setTimeout(checkForUpdate, 3000);
+setInterval(checkForUpdate, 1800000);
 
 function showToast(msg) {
   let t = document.getElementById('toast');
