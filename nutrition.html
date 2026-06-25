@@ -2136,7 +2136,7 @@ function generateSupplements(profile) {
       timing: 'Plusieurs moments — voir détail', dose: 'Combinaison de compléments phase 2',
       role: "Le cortisol chronique est le principal frein à la perte abdominale après 40 ans. Il favorise le stockage des graisses au niveau du ventre même avec un bon déficit calorique.",
       kasher: "Tous les compléments ci-dessous ont des versions kasher disponibles.",
-      note: "PROTOCOLE COMPLET :\n• Ashwagandha KSM-66 (300-600mg soir) — réduit le cortisol basal chronique\n• Phosphatidylserine (400-800mg post-séance) — réduit le pic de cortisol après effort intense (deadlift, Hyrox)\n• Magnésium glycinate (300mg soir) — améliore le sommeil et régule le cortisol nocturne\n• Oméga-3 (2-3g matin) — action anti-inflammatoire qui réduit la réponse au stress\n• Sommeil 7h+ PRIORITÉ ABSOLUE — un seul mauvais nuit augmente le cortisol de 37%\n• Zéro féculent après 20h — évite le pic insuline nocturne qui potentialise le cortisol",
+      note: "PROTOCOLE COMPLET :\n• Ashwagandha KSM-66 300-600mg — soir avec le diner ou au coucher\n• Phosphatidylserine (PS) 400-800mg — immediatement apres les grosses seances (deadlift, Hyrox)\n• Magnesium glycinate 300mg — soir au coucher\n• Omega-3 2-3g — matin avec le petit-dejeuner (repas gras)\n• Sommeil 7h+ PRIORITE ABSOLUE — une seule mauvaise nuit augmente le cortisol de 37%\n• Zero feculent apres 20h — evite le pic insuline nocturne qui potentialise le cortisol",
       phase: 2
     });
   }
@@ -2336,12 +2336,18 @@ function renderPlan() {
         const suppls = generateSupplements(p);
         const phase1 = suppls.filter(s => s.phase === 1);
         const phase2 = suppls.filter(s => s.phase === 2 && s.name !== 'Protocole anti-cortisol — ventre résistant');
-        const matin  = phase1.filter(s => s.timing && s.timing.includes('Matin')).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
-        const soir   = phase1.filter(s => s.timing && (s.timing.includes('Soir') || s.timing.includes('coucher'))).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
-        const p2names = phase2.map(s => s.emoji + ' ' + s.name).join(' · ');
+        const cortisol = suppls.find(s => s.name === 'Protocole anti-cortisol — ventre résistant');
+        const matin = phase1.filter(s => s.timing && s.timing.includes('Matin')).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
+        const soir  = phase1.filter(s => s.timing && (s.timing.includes('Soir') || s.timing.includes('coucher'))).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
+        const p2lines = phase2.map(s => {
+          const timing = s.timing ? s.timing.split(' — ')[0] : '';
+          return s.emoji + ' <strong style="color:var(--text)">' + s.name + '</strong> ' + s.dose.split('/')[0] + (timing ? ' <span style="color:var(--muted)">→ ' + timing + '</span>' : '');
+        }).join('<br>');
         return '<strong>Phase 1 — Matin :</strong> ' + (matin||'—') +
                ' &nbsp; <strong>' + (day.sport?'Post-séance':'Soir') + ' :</strong> ' + (soir||'—') +
-               (p2names ? '<br><span style="color:var(--info);font-size:11px"><strong>Phase 2 :</strong> ' + p2names + '</span>' : '');
+               (p2lines ? '<br><br><strong style="color:var(--info)">Phase 2 :</strong><br>' + p2lines : '') +
+               (cortisol ? '<br><br><strong style="color:var(--warn)">🎯 Protocole cortisol :</strong><br>' +
+                 '<span style="font-size:11px;line-height:1.8">' + cortisol.note.replace(/\n•/g,'<br>•') + '</span>' : '');
       })()}</div>
       ${(()=>{
         const h = getHydration(p, day);
@@ -2510,7 +2516,7 @@ function renderSuppl() {
       '<div class="meal-body" style="display:block">' +
         '<div class="meal-detail-text" style="margin-top:0"><strong style="color:var(--text)">Role :</strong> ' + s.role + '</div>' +
         '<div class="meal-detail-text" style="margin-top:6px"><span style="color:var(--danger);font-weight:500">Certif. :</span> ' + s.kasher + '</div>' +
-        '<div style="margin-top:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--muted);border-left:2px solid ' + phaseColor + '">' + s.note + '</div>' +
+        '<div style="margin-top:8px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);font-size:12px;color:var(--muted);border-left:2px solid ' + phaseColor + '">' + s.note.replace(/\n/g,'<br>') + '</div>' +
       '</div>' +
     '</div>';
   };
