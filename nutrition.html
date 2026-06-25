@@ -2606,10 +2606,11 @@ function renderMeasurements() {
 function renderWeight() {
   const arr = getWeights();
   const p = getProfile();
-  const startW = parseFloat(p.weight) || 88;
-  const goalW  = parseFloat(p.goal)   || 80;
+  const firstRecorded = arr.length ? arr[0].val : null;
+  const startW = firstRecorded || parseFloat(p.weight) || 88;
+  const goalW  = parseFloat(p.goal) || 80;
   const current = arr.length ? arr[arr.length-1].val : startW;
-  const lost = startW - current;
+  const lost = startW - current; // startW is now first recorded weight
   const remaining = current - goalW;
 
   document.getElementById('weight-stats').innerHTML = `
@@ -2673,7 +2674,8 @@ function drawWeightChart(arr, startW, goalW, targetDate) {
   ctx.fillStyle='#c8f06e88'; ctx.font='10px monospace'; ctx.textAlign='left';
   ctx.fillText('Objectif '+goalW+' kg',PAD.left+4,toY(goalW)-5);
   ctx.strokeStyle='#c8f06e33'; ctx.lineWidth=1; ctx.setLineDash([3,6]);
-  ctx.beginPath(); ctx.moveTo(toX(firstDate),toY(startW)); ctx.lineTo(toX(lastDate),toY(goalW)); ctx.stroke();
+  const projStartW = arr.length ? arr[0].val : startW;
+  ctx.beginPath(); ctx.moveTo(toX(firstDate),toY(projStartW)); ctx.lineTo(toX(lastDate),toY(goalW)); ctx.stroke();
   ctx.setLineDash([]);
   if (arr.length >= 2) {
     ctx.strokeStyle='#c8f06e'; ctx.lineWidth=2.5;
