@@ -932,6 +932,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <!-- GUIDE DÉPLACEMENT ISRAËL -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">✈️ Guide déplacement — Israël</div>
+      <div style="margin-bottom:14px;padding:12px 14px;background:var(--bg3);border-radius:var(--r);display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:600">Mode voyage Israël</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Active un plan sans entraînement · Objectif maintien · Adapté buffet et restaurants kasher</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">
+          <input type="checkbox" id="israel-mode-toggle" onchange="toggleIsraelMode()" style="opacity:0;width:0;height:0">
+          <span id="israel-mode-slider" style="position:absolute;cursor:pointer;inset:0;background:var(--border2);border-radius:13px;transition:.3s"></span>
+        </label>
+      </div>
       <div style="font-size:13px;color:var(--muted);line-height:1.9">
         <strong style="color:var(--parve)">Avantages :</strong> Tout est kasher, protéines partout, salades généreuses, poisson excellent.<br><br>
         <strong style="color:var(--text)">Petit-déjeuner hôtel (buffet)</strong><br>
@@ -1382,7 +1392,10 @@ function getMealSlots(profile, isDouble) {
 
 // ---- GENERATE ONE DAY ----
 function generateDay(dayKey, profile, targets, foods, training) {
-  const isSport  = ['lun','mar','mer','jeu'].includes(dayKey);
+  const israelMode = profile._israelMode || false;
+  const israelNote = israelMode ? '\n🇮🇱 Israël : labneh ou fromage blanc local · houmous + salade · grillade ou poisson. Objectif maintien.' : '';
+
+  const isSport  = !israelMode && ['lun','mar','mer','jeu'].includes(dayKey);
   const isDouble = profile._double || false;
   const isRepos  = !isSport;
   const t        = isDouble ? targets.double : isSport ? targets.sport : targets.rest;
@@ -1623,17 +1636,21 @@ function generateDay(dayKey, profile, targets, foods, training) {
 }
 // ---- GENERATE FULL WEEK ----
 function generateWeekPlan(profile) {
+  const israelMode = localStorage.getItem('israelMode') === '1';
+
   // Derive activity and training info from sessions
   profile = Object.assign({}, profile, {
-    activity: calcActivityFromSessions(),
-    sport: detectSportType(),
+    activity: israelMode ? 1.2 : calcActivityFromSessions(),
+    sport: israelMode ? 'repos' : detectSportType(),
     trainingtime: detectMainTrainingTime(),
-    sessions: countTrainingSessions(),
+    sessions: israelMode ? 0 : countTrainingSessions(),
+    _israelMode: israelMode,
   });
   const targets = getDayTargets(profile);
   const foods = getFoodLib(profile);
-  // Build DAYS dynamically from actual sessions
-  const allSessions = getTrainingSessions();
+
+  // Build DAYS — Israel mode = all rest days
+  const allSessions = israelMode ? [] : getTrainingSessions();
   const dayOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
   const dayKeyMap = {Lundi:'lun',Mardi:'mar',Mercredi:'mer',Jeudi:'jeu',Vendredi:'ven',Samedi:'sam',Dimanche:'dim'};
   const sessionsByDay = {};
@@ -1642,13 +1659,13 @@ function generateWeekPlan(profile) {
     if (k) { sessionsByDay[k] = (sessionsByDay[k]||0) + 1; }
   });
   const DAYS = {
-    lun: { title:'Lundi',    sport: (sessionsByDay.lun||0) > 0,  double: (sessionsByDay.lun||0) >= 2 },
-    mar: { title:'Mardi',    sport: (sessionsByDay.mar||0) > 0,  double: (sessionsByDay.mar||0) >= 2 },
-    mer: { title:'Mercredi', sport: (sessionsByDay.mer||0) > 0,  double: (sessionsByDay.mer||0) >= 2 },
-    jeu: { title:'Jeudi',    sport: (sessionsByDay.jeu||0) > 0,  double: (sessionsByDay.jeu||0) >= 2 },
-    ven: { title:'Vendredi', sport: (sessionsByDay.ven||0) > 0,  double: (sessionsByDay.ven||0) >= 2 },
-    sam: { title:'Samedi',   sport: (sessionsByDay.sam||0) > 0,  double: (sessionsByDay.sam||0) >= 2 },
-    dim: { title:'Dimanche', sport: (sessionsByDay.dim||0) > 0,  double: (sessionsByDay.dim||0) >= 2 },
+    lun: { title:'Lundi',    sport: !israelMode && (sessionsByDay.lun||0) > 0,  double: (sessionsByDay.lun||0) >= 2 },
+    mar: { title:'Mardi',    sport: !israelMode && (sessionsByDay.mar||0) > 0,  double: (sessionsByDay.mar||0) >= 2 },
+    mer: { title:'Mercredi', sport: !israelMode && (sessionsByDay.mer||0) > 0,  double: (sessionsByDay.mer||0) >= 2 },
+    jeu: { title:'Jeudi',    sport: !israelMode && (sessionsByDay.jeu||0) > 0,  double: (sessionsByDay.jeu||0) >= 2 },
+    ven: { title:'Vendredi', sport: !israelMode && (sessionsByDay.ven||0) > 0,  double: (sessionsByDay.ven||0) >= 2 },
+    sam: { title:'Samedi',   sport: false, double: false },
+    dim: { title:'Dimanche', sport: false, double: false },
   };
 
   const plan = {};
@@ -2315,7 +2332,17 @@ function renderPlan() {
             </div>
           </div>`).join('')}
       </div>
-      <div class="suppl-bar"><strong>Matin :</strong> Créatine 5g · Oméga-3 2g · Vit. D &nbsp;&nbsp;<strong>${day.sport?'Post-séance':'Soir'} :</strong> Magnésium glycinate 300mg</div>
+      <div class="suppl-bar">${(()=>{
+        const suppls = generateSupplements(p);
+        const phase1 = suppls.filter(s => s.phase === 1);
+        const phase2 = suppls.filter(s => s.phase === 2 && s.name !== 'Protocole anti-cortisol — ventre résistant');
+        const matin  = phase1.filter(s => s.timing && s.timing.includes('Matin')).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
+        const soir   = phase1.filter(s => s.timing && (s.timing.includes('Soir') || s.timing.includes('coucher'))).map(s => s.name.split(' ')[0] + ' ' + s.dose.split('/')[0]).join(' · ');
+        const p2names = phase2.map(s => s.emoji + ' ' + s.name).join(' · ');
+        return '<strong>Phase 1 — Matin :</strong> ' + (matin||'—') +
+               ' &nbsp; <strong>' + (day.sport?'Post-séance':'Soir') + ' :</strong> ' + (soir||'—') +
+               (p2names ? '<br><span style="color:var(--info);font-size:11px"><strong>Phase 2 :</strong> ' + p2names + '</span>' : '');
+      })()}</div>
       ${(()=>{
         const h = getHydration(p, day);
         return '<div class="hydration-bar"><div class="hydration-title">💧 Hydratation — <strong>' + h.totalMl + ' ml</strong> dans la journée</div><div class="hydration-slots">' +
@@ -2724,6 +2751,9 @@ function loadSettings() {
   const fields = ['sex','age','height','weight','goal','sessions','activity','diet','sport','stress','sleep','constraints','drink'];
   if (s.wakeup) { const el=document.getElementById('p-wakeup'); if(el) el.value=s.wakeup; }
   if (s.breakfastDelay) { const el=document.getElementById('p-breakfast-delay'); if(el) el.value=s.breakfastDelay; }
+  const israelTog = document.getElementById('israel-mode-toggle');
+  const israelSlider = document.getElementById('israel-mode-slider');
+  if (israelTog) { const isOn = localStorage.getItem('israelMode')==='1'; israelTog.checked=isOn; if(israelSlider) israelSlider.style.background = isOn ? 'var(--accent)' : 'var(--border2)'; }
   if (s.trainingtime) { const el=document.getElementById('p-trainingtime'); if(el) el.value=s.trainingtime; }
   fields.forEach(f => { const el=document.getElementById('p-'+f); if(el && s[f]) el.value=s[f]; });
   if (s.targetDate) document.getElementById('p-date').value = s.targetDate;
@@ -5273,6 +5303,19 @@ function applyGeneratedProgram() {
 // ============================================================
 // EXPORT / IMPORT DONNÉES
 // ============================================================
+
+function toggleIsraelMode() {
+  const tog = document.getElementById('israel-mode-toggle');
+  const slider = document.getElementById('israel-mode-slider');
+  const on = tog && tog.checked;
+  localStorage.setItem('israelMode', on ? '1' : '0');
+  if (slider) slider.style.background = on ? 'var(--accent)' : 'var(--border2)';
+  if (on) {
+    showToast('Mode Israël activé — recalcule le plan ⚡');
+  } else {
+    showToast('Mode Israël désactivé — recalcule le plan ⚡');
+  }
+}
 
 function exportData() {
   const keys = [
