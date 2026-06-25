@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-1">
+<meta name="app-version" content="2026.06.25-2">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2348,23 +2348,22 @@ function renderPlan() {
         const isLosing2 = p.objective === 'seche' || p.objective === 'perte';
         const cortisolMode = age2 >= 40 && isLosing2;
         const moments = {'Matin':[], 'Pre-seance':[], 'Post-seance':[], 'Soir':[]};
-        // Filter out the cortisol protocol card (shown separately inline) and phase 3
         suppls.filter(s => s.phase <= 2 && !s.name.includes('anti-cortisol')).forEach(s => {
           const t = s.timing || '';
-          // Trim dose to just the number+unit before the first space after unit
-          const shortDose = s.dose ? s.dose.split(' ')[0] + (s.dose.split(' ')[1] ? ' ' + s.dose.split(' ')[1] : '') : '';
-          const item = {...s, shortDose};
+          const cleanDose = (s.dose || '').split('/')[0].trim();
+          const item = {...s, cleanDose};
           if (t.includes('Post-s') || t.includes('post-s')) moments['Post-seance'].push(item);
           else if (t.includes('Pre-s') || t.includes('pre-s') || t.includes('Autour')) moments['Pre-seance'].push(item);
           else if (t.includes('Soir') || t.includes('coucher')) moments['Soir'].push(item);
           else moments['Matin'].push(item);
         });
         if (cortisolMode) {
-          moments['Soir'].push({name:'Sommeil 7h+ priorite absolue', shortDose:'', phase:3});
-          moments['Matin'].push({name:'Zero feculent apres 20h', shortDose:'', phase:3});
+          moments['Soir'].push({name:'Sommeil 7h+ priorite absolue', cleanDose:'', phase:3});
+          moments['Matin'].push({name:'Zero feculent apres 20h', cleanDose:'', phase:3});
         }
         const phaseColor = ph => ph === 1 ? 'var(--muted)' : ph === 2 ? 'var(--info)' : 'var(--warn)';
-        const renderItem = s => '<span style="display:block;color:' + phaseColor(s.phase||1) + '">— ' + s.name + (s.shortDose ? ' ' + s.shortDose : '') + '</span>';
+        const renderItem = s =>
+          '<span style="display:block;color:' + phaseColor(s.phase||1) + '">— ' + s.name + (s.cleanDose ? ' ' + s.cleanDose : '') + '</span>';
         return Object.entries(moments)
           .filter(([mom, list]) => {
             if (!list.length) return false;
@@ -2372,7 +2371,7 @@ function renderPlan() {
             return true;
           })
           .map(([mom, list]) =>
-            '<span style="display:block;margin-top:8px"><strong style="color:var(--text)">' + mom + ' :</strong></span>' +
+            '<span style="display:block;margin-top:10px;margin-bottom:2px"><strong style="color:var(--text)">' + mom + ' :</strong></span>' +
             list.map(renderItem).join('')
           ).join('');
       })()}</div>
@@ -5525,36 +5524,35 @@ scheduleMidnightReset();
 
 </body>
 <script>
-// ---- FORCE UPDATE PWA ----
-// On GitHub Pages, compare version meta tag with fetched version
-(async function checkUpdate() {
-  try {
-    const resp = await fetch(location.pathname + '?nocache=' + Date.now(), {
-      cache: 'no-store',
-      headers: {'Cache-Control': 'no-cache'}
+// ---- SERVICE WORKER ----
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          const banner = document.getElementById('update-banner');
+          if (banner) banner.style.display = 'flex';
+        }
+      });
     });
-    const text = await resp.text();
-    const m = text.match(/name="app-version"\s+content="([^"]+)"/);
-    const current = document.querySelector('meta[name="app-version"]')?.content;
-    if (m && m[1] && m[1] !== current) {
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'flex';
-    }
-  } catch(e) {}
-  // Check again every 5 minutes
-  setTimeout(checkUpdate, 300000);
-})();
+    // Check for updates every 5 minutes
+    setInterval(() => reg.update(), 300000);
+  }).catch(e => console.log('SW error:', e));
+
+  // Reload after SW takes control
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    location.reload();
+  });
+}
 
 window.applyUpdate = function() {
   exportData();
   setTimeout(() => {
-    // Clear caches if available
-    if ('caches' in window) {
-      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-        .then(() => location.reload(true));
-    } else {
-      location.reload(true);
-    }
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg && reg.waiting) reg.waiting.postMessage('skipWaiting');
+      else location.reload(true);
+    });
   }, 800);
 };
 
