@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-5">
+<meta name="app-version" content="2026.06.25-7">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1403,9 +1403,77 @@ function getMealSlots(profile, isDouble) {
 // ---- GENERATE ONE DAY ----
 function generateDay(dayKey, profile, targets, foods, training) {
   const israelMode = profile._israelMode || false;
-  const israelNote = israelMode ? '\n🇮🇱 Israël : labneh ou fromage blanc local · houmous + salade · grillade ou poisson. Objectif maintien.' : '';
 
-  const isSport  = !israelMode && ['lun','mar','mer','jeu'].includes(dayKey);
+  // In Israel mode — return dedicated menus based on the deployment guide
+  if (israelMode) {
+    const slots = getMealSlots(profile, false);
+    const isWeekend = dayKey === 'sam' || dayKey === 'dim';
+    const isFriday  = dayKey === 'ven';
+
+    const meals = [];
+
+    // PETIT DÉJEUNER — buffet hôtel
+    meals.push({
+      time: slots[0],
+      name: 'Buffet hôtel — petit-déjeuner',
+      type: 'parve',
+      kcal: 380, p: 28, g: 20, l: 18,
+      detail: 'Oeufs brouillés ou omelette · Labneh (fromage blanc israelien) · Légumes frais (tomates, concombre, poivrons) · Salade israelienne · ' + (profile.drink === 'cafe' ? 'Café' : 'Thé') + '\n✅ Priorité : oeufs + labneh + légumes\n🚫 Éviter : viennoiseries, céréales sucrées, jus de fruits',
+      recipe: null
+    });
+
+    // DÉJEUNER — restaurant
+    const dejOptions = [
+      {name:'Salade + grillade de poulet', detail:'Salade fraîche · Blanc de poulet grillé · Houmous · Légumes · Huile d\'olive + citron\n✅ Féculents à part — commander sans ou en petite quantité', kcal:420, p:42, g:15, l:14},
+      {name:'Poisson grillé + salade', detail:'Poisson du jour grillé (tilapia, loup, dorade) · Salade israelienne · Légumes grillés · Tahini\n✅ Excellent choix — protéine maigre + légumes', kcal:380, p:38, g:10, l:14},
+      {name:'Mezze végétarien + grillade', detail:'Houmous · Baba ganoush · Salade · Falafels (limiter) · Grillade de viande ou poulet\n✅ Houmous = bonne source de protéines végétales\n⚠️ Falafels frits — 2-3 max', kcal:450, p:32, g:30, l:18},
+    ];
+    const dej = dejOptions[Math.abs(dayKey.charCodeAt(0)) % dejOptions.length];
+    meals.push({
+      time: slots[1], type: 'viande',
+      name: dej.name, detail: dej.detail, kcal: dej.kcal, p: dej.p, g: dej.g, l: dej.l, recipe: null
+    });
+
+    // COLLATION — si besoin
+    meals.push({
+      time: minToTime(timeToMin(slots[1]) + 180),
+      name: 'Collation — fruits frais ou café',
+      type: 'parve',
+      kcal: 80, p: 2, g: 18, l: 1,
+      detail: '1 fruit de saison (orange, pomme, figue) · Eau ou café\n🚫 Éviter : halva, baklava, jus de grenade sucré\n✅ Un seul écart par jour maximum — choisir le bon moment',
+      recipe: null
+    });
+
+    // DÎNER
+    const dinOptions = [
+      {name:'Restaurant — poisson + légumes', detail:'Poisson grillé · Légumes de saison · Salade · Tahini ou huile d\'olive\n🚫 Zéro féculent le soir — protocole +45 ans maintenu en voyage', kcal:320, p:38, g:6, l:12, type:'poisson'},
+      {name:'Restaurant — grillade + salade', detail:'Entrecôte / poulet grillé · Grande salade · Légumes grillés\n🚫 Pas de riz ni pita le soir\n⚠️ Sauces sucrées (amba, ketchup) à éviter', kcal:360, p:40, g:8, l:14, type:'viande'},
+      {name: isFriday ? 'Dîner de Shabbat' : 'Restaurant — mezze léger', detail: isFriday ? 'Repas festif : viande + légumes + 1 féculent autorisé (Shabbat)\n✅ Profite du repas sans culpabiliser — convivialité prioritaire\n💡 Reprends le plan normal le lendemain' : 'Houmous + salade · Grillade légère · Pas de pain\n✅ Objectif maintien — un bon repas sans excès', kcal: isFriday ? 520 : 300, p:28, g: isFriday ? 35 : 10, l:16, type:'viande'},
+    ];
+    const din = dinOptions[(Math.abs(dayKey.charCodeAt(0))+1) % dinOptions.length];
+    meals.push({
+      time: slots[2], type: din.type,
+      name: din.name, detail: din.detail, kcal: din.kcal, p: din.p, g: din.g, l: din.l, recipe: null
+    });
+
+    // DESSERT
+    meals.push({
+      time: minToTime(timeToMin(slots[2]) + 30),
+      name: 'Labneh nature · dessert',
+      type: 'parve',
+      kcal: 90, p: 10, g: 5, l: 4,
+      detail: 'Labneh nature (équivalent local du fromage blanc)\n✅ Parve — compatible avec le dîner poisson\n⚠️ Après viande : attendre 3-6h (kasher)',
+      recipe: null
+    });
+
+    const totalP = meals.reduce((s,m)=>s+m.p,0);
+    const totalG = meals.reduce((s,m)=>s+m.g,0);
+    const totalL = meals.reduce((s,m)=>s+m.l,0);
+    const totalKcal = meals.reduce((s,m)=>s+m.kcal,0);
+    return { meals, p:totalP, g:totalG, l:totalL, kcal:Math.round(totalKcal*1.05), target:targets.rest };
+  }
+
+  // ---- MODE NORMAL ----
   const isDouble = profile._double || false;
   const isRepos  = !isSport;
   const t        = isDouble ? targets.double : isSport ? targets.sport : targets.rest;
@@ -2920,7 +2988,14 @@ function calcAndApply() {
 
   // Save plan timestamp
   localStorage.setItem('planUpdated', new Date().toLocaleDateString('fr-FR'));
-  showToast('Plan mis à jour ✓');
+  const isIsrael = localStorage.getItem('israelMode') === '1';
+  showToast(isIsrael ? '✈️ Plan Israel calcule ✓' : 'Plan mis a jour ✓');
+
+  // Navigate to plan to show changes immediately
+  setTimeout(() => {
+    const planItem = document.querySelector('.nav-item[onclick*=\'plan\']');
+    showSection('plan', planItem);
+  }, 300);
 }
 
 // ============================================================
