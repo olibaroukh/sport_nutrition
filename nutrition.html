@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-4">
+<meta name="app-version" content="2026.06.25-5">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1646,6 +1646,7 @@ function generateDay(dayKey, profile, targets, foods, training) {
 }
 // ---- GENERATE FULL WEEK ----
 function generateWeekPlan(profile) {
+  // Always read israelMode fresh from localStorage
   const israelMode = localStorage.getItem('israelMode') === '1';
 
   // Derive activity and training info from sessions
@@ -2290,6 +2291,23 @@ function getHydration(profile, dayPlan) {
 
 function renderPlan() {
   if (!CURRENT_PLAN) return;
+  const israelMode = localStorage.getItem('israelMode') === '1';
+
+  // Show/hide Israel banner
+  let israelBanner = document.getElementById('israel-plan-banner');
+  if (!israelBanner) {
+    israelBanner = document.createElement('div');
+    israelBanner.id = 'israel-plan-banner';
+    israelBanner.style.cssText = 'display:none;padding:10px 16px;background:rgba(200,240,110,.1);border:1px solid var(--accent)44;border-radius:var(--r);margin-bottom:16px;font-size:13px;color:var(--accent)';
+    const tabs = document.querySelector('.day-tabs');
+    if (tabs) tabs.parentNode.insertBefore(israelBanner, tabs);
+  }
+  if (israelMode) {
+    israelBanner.style.display = 'block';
+    israelBanner.innerHTML = '✈️ <strong>Mode Israël actif</strong> — Semaine sans entraînement · Objectif maintien · Recalcule le plan pour appliquer';
+  } else {
+    israelBanner.style.display = 'none';
+  }
   const p = getProfile();
   const dayKeys = ['lun','mar','mer','jeu','ven','sam','dim'];
   const dayNames = {
