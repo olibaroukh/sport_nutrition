@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-12">
+<meta name="app-version" content="2026.06.25-13">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -436,6 +436,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="nav-item" onclick="showSection('weight',this)"><span class="nav-icon">📏</span> Suivi corporel</div>
     <div class="nav-item" onclick="showSection('perf',this)"><span class="nav-icon">💪</span> Performances</div>
     <div class="nav-item" onclick="showSection('dashboard',this)"><span class="nav-icon">📊</span> Bilan semaine</div>
+    <div class="nav-item" onclick="showSection('vacation',this)"><span class="nav-icon">🌴</span> Mode vacances</div>
     <div class="nav-item" onclick="showSection('settings',this)"><span class="nav-icon">⚙️</span> Paramètres</div>
   </nav>
   <div class="sidebar-stats" id="sidebar-stats">
@@ -832,7 +833,173 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
 
 <!-- PARAMÈTRES -->
-<section class="section" id="section-settings" style="padding:0">
+<!-- MODE VACANCES -->
+<section class="section" id="section-vacation" style="padding:0">
+  <div class="page-header">
+    <div class="page-tag">Mode vacances</div>
+    <div class="page-title">🌴 Vacances & Déplacements</div>
+    <div class="page-desc">Configure ton contexte — conseils adaptés sans contrainte excessive</div>
+  </div>
+  <div style="padding:32px 40px;max-width:680px">
+
+    <!-- TOGGLE ACTIVATION -->
+    <div style="background:var(--bg2);border:1px solid var(--accent)44;border-radius:var(--r2);padding:20px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-family:var(--font-head);font-size:15px;font-weight:700">Mode vacances</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Active les conseils adaptés à ton contexte de voyage</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">
+          <input type="checkbox" id="vacation-toggle" onchange="toggleVacationMode()" style="opacity:0;width:0;height:0">
+          <span id="vacation-slider" style="position:absolute;cursor:pointer;inset:0;background:var(--border2);border-radius:13px;transition:.3s"></span>
+        </label>
+      </div>
+    </div>
+
+    <div id="vacation-config" style="display:none">
+
+      <!-- DURÉE -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">📅 Durée</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px" id="vac-duree-grid">
+          ${[
+            {id:'weekend', label:'Week-end', sub:'2-3 jours'},
+            {id:'courte',  label:'Court séjour', sub:'4-7 jours'},
+            {id:'moyenne', label:'Vacances', sub:'1-2 semaines'},
+            {id:'longue',  label:'Long séjour', sub:'3 semaines+'},
+          ].map(o => vacCard('vac-duree', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- CONTEXTE -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🧭 Contexte</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+          ${[
+            {id:'detente',    label:'Vacances détente',  sub:'repos prioritaire'},
+            {id:'famille',    label:'Famille',           sub:'repas partagés'},
+            {id:'seminaire',  label:'Séminaire',         sub:'pro + social'},
+            {id:'voyage_pro', label:'Voyage pro',        sub:'restaurants seul'},
+          ].map(o => vacCard('vac-contexte', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- HÉBERGEMENT -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🏨 Hébergement</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+          ${[
+            {id:'hotel_buffet',  label:'Hôtel buffet',       sub:'petit-déj inclus'},
+            {id:'hotel_sans',    label:'Hôtel sans buffet',  sub:'à la carte'},
+            {id:'appart_perso',  label:'Appartement perso',  sub:'cuisine complète'},
+            {id:'location',      label:'Location Airbnb',    sub:'cuisine basique'},
+            {id:'famille_heberge', label:'Chez famille/amis', sub:'repas partagés'},
+            {id:'croisiere',     label:'Croisière',          sub:'buffet permanent'},
+          ].map(o => vacCard('vac-heberg', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- REPAS -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🍽️ Organisation des repas</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+          ${[
+            {id:'buffet',      label:'Buffet',         sub:'hôtel ou croisière'},
+            {id:'fait_maison', label:'Fait maison',    sub:'cuisine sur place'},
+            {id:'restaurant',  label:'Restaurant',     sub:'tous les repas'},
+            {id:'mixte',       label:'Mixte',          sub:'combinaison libre'},
+          ].map(o => vacCard('vac-repas', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- TYPE DE VACANCES (multi-sélection) -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px">🏖️ Type de vacances</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Sélection multiple possible</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${[
+            {id:'plage',      label:'🏖️ Plage'},
+            {id:'montagne',   label:'🏔️ Montagne'},
+            {id:'randonnee',  label:'🥾 Randonnée'},
+            {id:'city_trip',  label:'🏙️ City trip'},
+            {id:'culturel',   label:'🏛️ Culturel'},
+            {id:'croisiere_type', label:'🚢 Croisière'},
+            {id:'ski',        label:'⛷️ Ski'},
+            {id:'camping',    label:'⛺ Camping'},
+          ].map(o => `<label style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;user-select:none" id="vac-type-lbl-${o.id}">
+            <input type="checkbox" id="vac-type-${o.id}" onchange="updateVacTypeLabel('${o.id}')" style="display:none">
+            <span id="vac-type-dot-${o.id}" style="width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:all .15s"></span>
+            ${o.label}
+          </label>`).join('')}
+        </div>
+      </div>
+
+      <!-- ACTIVITÉ -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">⚡ Niveau d'activité</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+          ${[
+            {id:'farniente',  label:'Farniente',       sub:'plage/piscine/repos'},
+            {id:'modere',     label:'Actif modéré',    sub:'balades, visites'},
+            {id:'sportif',    label:'Sportif',         sub:'randos, vélo, natation'},
+          ].map(o => vacCard('vac-activite', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- ACCÈS SPORT -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🏋️ Accès sport</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+          ${[
+            {id:'aucun',      label:'Aucun',           sub:'poids de corps seul'},
+            {id:'piscine',    label:'Piscine',         sub:'natation possible'},
+            {id:'salle_hotel',label:'Salle hôtel',     sub:'équipement basique'},
+            {id:'plein_air',  label:'Plein air',       sub:'course, vélo, rando'},
+            {id:'tout',       label:'Tout équipé',     sub:'salle complète'},
+          ].map(o => vacCard('vac-sport', o.id, o.label, o.sub)).join('')}
+        </div>
+      </div>
+
+      <!-- OBJECTIF + ALCOOL -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🎯 Objectif</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${[
+              {id:'maintenir',  label:'Maintenir'},
+              {id:'leger_plus', label:'Accepter +1-2 kg'},
+              {id:'continuer',  label:'Continuer la perte'},
+            ].map(o => vacCard('vac-objectif', o.id, o.label, '')).join('')}
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🍷 Alcool</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${[
+              {id:'aucun',       label:'Aucun'},
+              {id:'occasionnel', label:'Occasionnel'},
+              {id:'regulier',    label:'Régulier'},
+            ].map(o => vacCard('vac-alcool', o.id, o.label, '')).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- DESTINATION -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
+        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:10px">📍 Destination (optionnel)</div>
+        <input type="text" id="vac-destination" placeholder="Ex: Grèce, Maroc, New York, Alpes..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:14px">
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Permet d'adapter les conseils cuisine locale, options kasher, hydratation selon le climat</div>
+      </div>
+
+      <button onclick="generateVacationPlan()" style="width:100%;padding:12px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:15px">🌴 Générer mon plan vacances</button>
+
+      <div id="vacation-plan-result" style="margin-top:20px"></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PARAMÈTRES -->
   <div class="page-header">
     <div class="page-tag">07 — Paramètres</div>
     <div class="page-title">Mon profil</div>
@@ -3582,6 +3749,7 @@ function showSection(name, el, fromBurger) {
   if (name==='perf') { updatePerfForm(); renderPerf(); }
   if (name==='dashboard') renderDashboard();
   if (name==='bloodtest') renderBloodTest();
+  if (name==='vacation') restoreVacConfig();
   if (name==='settings') { loadSettings(); renderNotifPreview(); }
   if (name==='journal') renderJournal();
   if (name==='forme') { renderFormeHistory(); updateFormeScore(); document.getElementById('forme-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -5586,6 +5754,226 @@ function dismissUpdate() {
 setTimeout(checkForUpdate, 3000);
 setInterval(checkForUpdate, 1800000);
 
+// ============================================================
+// MODE VACANCES
+// ============================================================
+
+function vacCard(group, id, label, sub) {
+  return '<div onclick="selectVacCard(\'' + group + '\',\'' + id + '\')" id="' + group + '-' + id + '" ' +
+    'style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s">' +
+    '<div style="font-size:13px;font-weight:500">' + label + '</div>' +
+    (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + sub + '</div>' : '') +
+  '</div>';
+}
+
+function selectVacCard(group, id) {
+  // Deselect all in group
+  document.querySelectorAll('[id^="' + group + '-"]').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--bg3)';
+  });
+  // Select chosen
+  const el = document.getElementById(group + '-' + id);
+  if (el) { el.style.borderColor = 'var(--accent)'; el.style.background = 'rgba(200,240,110,.08)'; }
+  // Save
+  const vac = getVacConfig();
+  vac[group] = id;
+  saveVacConfig(vac);
+}
+
+function updateVacTypeLabel(id) {
+  const cb = document.getElementById('vac-type-' + id);
+  const lbl = document.getElementById('vac-type-lbl-' + id);
+  const dot = document.getElementById('vac-type-dot-' + id);
+  if (!cb || !lbl || !dot) return;
+  if (cb.checked) {
+    lbl.style.borderColor = 'var(--accent)';
+    lbl.style.background = 'rgba(200,240,110,.1)';
+    dot.style.background = 'var(--accent)';
+  } else {
+    lbl.style.borderColor = 'var(--border)';
+    lbl.style.background = 'var(--bg3)';
+    dot.style.background = 'var(--border2)';
+  }
+  // Save types
+  const vac = getVacConfig();
+  const types = ['plage','montagne','randonnee','city_trip','culturel','croisiere_type','ski','camping']
+    .filter(t => { const el = document.getElementById('vac-type-' + t); return el && el.checked; });
+  vac['vac-types'] = types;
+  saveVacConfig(vac);
+}
+
+function getVacConfig() { return JSON.parse(localStorage.getItem('vacationConfig') || '{}'); }
+function saveVacConfig(v) { localStorage.setItem('vacationConfig', JSON.stringify(v)); }
+
+function toggleVacationMode() {
+  const tog = document.getElementById('vacation-toggle');
+  const slider = document.getElementById('vacation-slider');
+  const config = document.getElementById('vacation-config');
+  const on = tog && tog.checked;
+  localStorage.setItem('vacationMode', on ? '1' : '0');
+  if (slider) slider.style.background = on ? 'var(--accent)' : 'var(--border2)';
+  if (config) config.style.display = on ? 'block' : 'none';
+  showToast(on ? '🌴 Mode vacances activé' : 'Mode vacances désactivé');
+}
+
+function restoreVacConfig() {
+  const vac = getVacConfig();
+  const on = localStorage.getItem('vacationMode') === '1';
+  const tog = document.getElementById('vacation-toggle');
+  const slider = document.getElementById('vacation-slider');
+  const config = document.getElementById('vacation-config');
+  if (tog) tog.checked = on;
+  if (slider) slider.style.background = on ? 'var(--accent)' : 'var(--border2)';
+  if (config) config.style.display = on ? 'block' : 'none';
+
+  // Restore card selections
+  Object.entries(vac).forEach(([group, id]) => {
+    if (group === 'vac-types') return;
+    const el = document.getElementById(group + '-' + id);
+    if (el) { el.style.borderColor = 'var(--accent)'; el.style.background = 'rgba(200,240,110,.08)'; }
+  });
+  // Restore type checkboxes
+  (vac['vac-types'] || []).forEach(t => {
+    const cb = document.getElementById('vac-type-' + t);
+    if (cb) { cb.checked = true; updateVacTypeLabel(t); }
+  });
+  // Restore destination
+  const dest = document.getElementById('vac-destination');
+  if (dest && vac.destination) dest.value = vac.destination;
+}
+
+function generateVacationPlan() {
+  const vac = getVacConfig();
+  const p = getProfile();
+
+  // Save destination
+  const destEl = document.getElementById('vac-destination');
+  if (destEl) vac.destination = destEl.value.trim();
+  saveVacConfig(vac);
+
+  const duree    = vac['vac-duree']    || 'moyenne';
+  const contexte = vac['vac-contexte'] || 'detente';
+  const heberg   = vac['vac-heberg']   || 'hotel_buffet';
+  const repas    = vac['vac-repas']    || 'mixte';
+  const activite = vac['vac-activite'] || 'modere';
+  const sport    = vac['vac-sport']    || 'aucun';
+  const objectif = vac['vac-objectif'] || 'maintenir';
+  const alcool   = vac['vac-alcool']   || 'occasionnel';
+  const types    = vac['vac-types']    || [];
+  const dest     = vac.destination     || '';
+
+  // --- CALORIE TARGET ---
+  const actMulti = {farniente:1.2, modere:1.375, sportif:1.55}[activite] || 1.375;
+  const tdee = Math.round((p.sex==='H' ? 10*p.weight+6.25*p.height-5*p.age+5 : 10*p.weight+6.25*p.height-5*p.age-161) * actMulti);
+  const kcalTarget = {maintenir: tdee, leger_plus: tdee+150, continuer: tdee-400}[objectif] || tdee;
+
+  // --- PETIT DEJEUNER ---
+  const pdj = {
+    hotel_buffet: 'Buffet hôtel — Priorité : oeufs (brouillés, durs, omelette) · Labneh ou yaourt nature · Légumes frais · Café\n🚫 Éviter : viennoiseries, jus de fruits, céréales sucrées',
+    hotel_sans: 'Commander à la carte — Oeufs + toast complet + café\n💡 Éviter les formules complètes avec jus+viennoiseries',
+    appart_perso: 'Préparer à l\'appart — Oeufs brouillés + flocons + fruit · Même plan qu\'à la maison',
+    location: 'Faire simple — Oeufs + pain complet + fruit · Faire les courses dès le premier jour',
+    famille_heberge: 'Adapter le buffet familial — Oeufs si disponibles · Pain complet + fromage blanc\n💡 Ne pas refuser mais composer son assiette',
+    croisiere: 'Buffet permanent — Même stratégie qu\'hôtel mais plus de tentations\n⚠️ Éviter de retourner plusieurs fois · Une assiette, bien composée',
+  }[heberg] || 'Oeufs + protéines + légumes · Éviter les glucides rapides le matin';
+
+  // --- DÉJEUNER ---
+  const dej = {
+    buffet: 'Stratégie buffet midi — Grande salade + protéine grillée (viande ou poisson) + légumes\n🚫 Pas de féculents si dîner au restaurant le soir',
+    fait_maison: 'Déjeuner maison — Même plan qu\'à la maison · Profiter de la cuisine pour équilibrer',
+    restaurant: 'Restaurant — Salade + grillade ou poisson · Commander houmous en entrée si dispo\n💡 Demander les sauces à part',
+    mixte: 'Variable — Si restaurant : salade + protéine · Si maison : plan habituel',
+  }[repas] || 'Protéine + légumes + féculent modéré';
+
+  // --- DINER ---
+  const diner = {
+    maintenir: 'Dîner équilibré — Poisson ou viande + légumes · Féculent optionnel\n✅ Un dessert léger possible (yaourt, fruit)',
+    leger_plus: 'Dîner détente — Profite sans excès · Évite les sauces lourdes et fritures · Un verre de vin si tu veux\n✅ Pas de culpabilité mais reste raisonnable',
+    continuer: 'Dîner strict — Protéine + légumes uniquement · Zéro féculent le soir\n🔄 Même protocole qu\'à la maison',
+  }[objectif] || '';
+
+  // --- SPORT ---
+  const sportConseil = {
+    aucun: 'Poids de corps — 20 min circuit le matin : pompes, squats, gainage, fentes. Pas besoin de salle.',
+    piscine: 'Natation — 30 min de longueurs en interval : 2 min effort / 1 min repos × 10. Excellent cardio-force.',
+    salle_hotel: 'Salle hôtel — Priorité : rameur ou vélo + pompes + gainage. 30-40 min suffisent.',
+    plein_air: 'Plein air — ' + (types.includes('randonnee') ? 'Randonnée = excellente zone 2. Bâtons si dispo, rythme conversationnel.' : types.includes('ski') ? 'Ski = sport complet. Bien manger avant les pistes.' : 'Course à pied 25-30 min ou vélo. Tôt le matin avant la chaleur.'),
+    tout: 'Salle complète — Maintiens 2-3 séances/semaine · Force + cardio · Réduis le volume vs habitude',
+  }[sport] || '';
+
+  // --- ALCOOL ---
+  const alcoolConseil = {
+    aucun: '✅ Aucun alcool — excellent levier pour maintenir la composition corporelle',
+    occasionnel: '💡 Alcool occasionnel — max 1-2 verres de vin rouge ou champagne · Éviter bière et cocktails sucrés · Jamais à jeun',
+    regulier: '⚠️ Alcool régulier — compense en réduisant les féculents ce jour-là · Éviter la charcuterie à côté · Bien hydrater entre chaque verre',
+  }[alcool] || '';
+
+  // --- COMPLÉMENTS ---
+  const dureeLabel = {weekend:'2-3 jours', courte:'4-7 jours', moyenne:'1-2 semaines', longue:'3 semaines+'}[duree];
+  const isStressful = contexte === 'seminaire' || contexte === 'voyage_pro';
+  const complements = [
+    '🌿 Ashwagandha KSM-66 — soir' + (isStressful ? ' ⚠️ PRIORITÉ — contexte stressant' : ''),
+    '🧠 Phosphatidylserine — soir',
+    '🌙 Magnésium glycinate — coucher',
+    '🐟 Oméga-3 — matin avec repas gras',
+    duree !== 'weekend' ? '🦴 Collagène marin — matin avec vitamine C' : null,
+    duree === 'longue' ? '⚡ Zinc bisglycinate — soir' : null,
+  ].filter(Boolean);
+
+  // --- DESTINATION SPÉCIFIQUE ---
+  let destNote = '';
+  if (dest) {
+    const destLow = dest.toLowerCase();
+    if (destLow.includes('grèce') || destLow.includes('grece') || destLow.includes('greece')) {
+      destNote = '🇬🇷 Grèce : poisson frais, salade grecque, houmous, tzatziki (laitier — kasher si certifié) · Éviter les fromages feta non certifiés · Agneau grillé excellent · Chaleur → +500ml eau/jour';
+    } else if (destLow.includes('maroc') || destLow.includes('morocco')) {
+      destNote = '🇲🇦 Maroc : tagine poulet + légumes excellent · Couscous en déjeuner (féculent → pas le soir) · Thé à la menthe sans sucre · Chaleur → +600ml eau/jour · Kasher : difficile, privilégier poisson et légumes';
+    } else if (destLow.includes('italie') || destLow.includes('italy')) {
+      destNote = '🇮🇹 Italie : poisson/fruits de mer excellents · Éviter les pâtes le soir · Carpaccio de boeuf en entrée · Tiramisu = écart acceptable 1x · Kasher : chercher restaurant kasher ou poisson uniquement';
+    } else if (destLow.includes('israel') || destLow.includes('israël')) {
+      destNote = '🇮🇱 Israël : mode kasher naturel · Labneh + oeufs au buffet · Salade israélienne + houmous + grillade · Voir le guide Israël dans Paramètres';
+    } else if (destLow.includes('usa') || destLow.includes('états-unis') || destLow.includes('new york') || destLow.includes('américain')) {
+      destNote = '🇺🇸 USA : portions énormes → commander half portion · Salade César sans croutons · Grilled salmon/chicken · Éviter les dressings (sucre caché) · Kasher : synagogues locales pour adresses';
+    } else if (destLow.includes('alpes') || destLow.includes('montagne') || destLow.includes('ski')) {
+      destNote = '🏔️ Montagne : dépense énergétique élevée → glucides autorisés le soir après randonnée/ski · Fondue et raclette : écart acceptable 1x/semaine · Altitude → hydrater davantage';
+    } else {
+      destNote = '📍 ' + dest + ' — Stratégie générale : poisson ou viande grillée + légumes + salade. Demande kasher à l\'hôtel à l\'arrivée.';
+    }
+  }
+
+  // --- RENDER ---
+  const result = document.getElementById('vacation-plan-result');
+  const dureeLabel2 = {weekend:'Week-end', courte:'Court séjour', moyenne:'Vacances', longue:'Long séjour'}[duree];
+  const objectifLabel = {maintenir:'Maintien du poids', leger_plus:'Légère prise acceptée', continuer:'Continuer la perte'}[objectif];
+
+  result.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--accent)44;border-radius:var(--r2);padding:16px;margin-bottom:16px">
+      <div style="font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px">🌴 Plan vacances généré</div>
+      <div style="font-size:12px;color:var(--muted)">${dureeLabel2}${dest ? ' · ' + dest : ''} · ${objectifLabel} · ~${kcalTarget} kcal/jour</div>
+    </div>
+
+    ${destNote ? '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:12px;font-size:13px;line-height:1.8;color:var(--muted)">' + destNote + '</div>' : ''}
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${[
+        {icon:'🍳', title:'Petit-déjeuner', content:pdj},
+        {icon:'🍽️', title:'Déjeuner', content:dej},
+        {icon:'🌙', title:'Dîner', content:diner},
+        sportConseil ? {icon:'💪', title:'Sport', content:sportConseil} : null,
+        {icon:'🍷', title:'Alcool', content:alcoolConseil},
+        {icon:'💊', title:'Compléments à emporter — ' + dureeLabel, content:complements.map(c => '— ' + c).join('\n')},
+        {icon:'💧', title:'Hydratation', content:(types.includes('plage') || dest.toLowerCase().includes('maroc') || dest.toLowerCase().includes('grèce')) ? '+500-600ml par rapport à l\'habitude · Eau plate prioritaire · Éviter sodas et jus de fruits' : 'Maintenir le plan habituel d\'hydratation · Adapter selon la chaleur'},
+      ].filter(Boolean).map(s =>
+        '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px">' +
+          '<div style="font-family:var(--font-head);font-size:13px;font-weight:700;margin-bottom:8px">' + s.icon + ' ' + s.title + '</div>' +
+          '<div style="font-size:13px;color:var(--muted);line-height:1.8;white-space:pre-line">' + s.content + '</div>' +
+        '</div>'
+      ).join('')}
+    </div>
+  `;
+}
+
 function showToast(msg) {
   let t = document.getElementById('toast');
   if (!t) { t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0e0f0d;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:200;transition:opacity .3s;pointer-events:none';document.body.appendChild(t); }
@@ -5668,6 +6056,7 @@ scheduleMidnightReset();
     <div class="burger-nav-item" onclick="showSection('perf',this,true)"><span>💪</span> Performances</div>
     <div class="burger-nav-item" onclick="showSection('dashboard',this,true)"><span>📊</span> Bilan semaine</div>
     <div class="burger-nav-section">Réglages</div>
+    <div class="burger-nav-item" onclick="showSection('vacation',this,true)"><span>🌴</span> Mode vacances</div>
     <div class="burger-nav-item" onclick="showSection('settings',this,true)"><span>⚙️</span> Paramètres</div>
   </nav>
   <div class="burger-stats" id="burger-stats-panel"></div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutrition-v2026.06.25-12';
+const CACHE_NAME = 'nutrition-v2026.06.25-13';
 const URL_TO_CACHE = './nutrition.html';
 
 self.addEventListener('install', e => {
