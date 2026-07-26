@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-13">
+<meta name="app-version" content="2026.06.25-16">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -395,7 +395,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .alt-btns{flex-wrap:wrap!important}
 }
 
-@media(max-width:600px) and (orientation:landscape){
+@media(max-width:600px){
+  /* Settings — all grids single column */
+  #section-settings [style*="grid-template-columns:1fr 1fr"],
+  #section-settings [style*="grid-template-columns:repeat"]{
+    grid-template-columns:1fr!important
+  }
+  #section-settings .param-field{min-width:0!important}
+  #section-settings input, #section-settings select{width:100%!important}
+}
   /* Landscape: 2-col where possible to use horizontal space */
   #section-perf [style*="grid-template-columns:1fr 1fr 1fr"]{
     grid-template-columns:1fr 1fr!important
@@ -832,7 +840,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 </section>
 
 
-<!-- PARAMÈTRES -->
 <!-- MODE VACANCES -->
 <section class="section" id="section-vacation" style="padding:0">
   <div class="page-header">
@@ -840,164 +847,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="page-title">🌴 Vacances & Déplacements</div>
     <div class="page-desc">Configure ton contexte — conseils adaptés sans contrainte excessive</div>
   </div>
-  <div style="padding:32px 40px;max-width:680px">
-
-    <!-- TOGGLE ACTIVATION -->
-    <div style="background:var(--bg2);border:1px solid var(--accent)44;border-radius:var(--r2);padding:20px;margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div>
-          <div style="font-family:var(--font-head);font-size:15px;font-weight:700">Mode vacances</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">Active les conseils adaptés à ton contexte de voyage</div>
-        </div>
-        <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">
-          <input type="checkbox" id="vacation-toggle" onchange="toggleVacationMode()" style="opacity:0;width:0;height:0">
-          <span id="vacation-slider" style="position:absolute;cursor:pointer;inset:0;background:var(--border2);border-radius:13px;transition:.3s"></span>
-        </label>
-      </div>
-    </div>
-
-    <div id="vacation-config" style="display:none">
-
-      <!-- DURÉE -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">📅 Durée</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px" id="vac-duree-grid">
-          ${[
-            {id:'weekend', label:'Week-end', sub:'2-3 jours'},
-            {id:'courte',  label:'Court séjour', sub:'4-7 jours'},
-            {id:'moyenne', label:'Vacances', sub:'1-2 semaines'},
-            {id:'longue',  label:'Long séjour', sub:'3 semaines+'},
-          ].map(o => vacCard('vac-duree', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- CONTEXTE -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🧭 Contexte</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
-          ${[
-            {id:'detente',    label:'Vacances détente',  sub:'repos prioritaire'},
-            {id:'famille',    label:'Famille',           sub:'repas partagés'},
-            {id:'seminaire',  label:'Séminaire',         sub:'pro + social'},
-            {id:'voyage_pro', label:'Voyage pro',        sub:'restaurants seul'},
-          ].map(o => vacCard('vac-contexte', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- HÉBERGEMENT -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🏨 Hébergement</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
-          ${[
-            {id:'hotel_buffet',  label:'Hôtel buffet',       sub:'petit-déj inclus'},
-            {id:'hotel_sans',    label:'Hôtel sans buffet',  sub:'à la carte'},
-            {id:'appart_perso',  label:'Appartement perso',  sub:'cuisine complète'},
-            {id:'location',      label:'Location Airbnb',    sub:'cuisine basique'},
-            {id:'famille_heberge', label:'Chez famille/amis', sub:'repas partagés'},
-            {id:'croisiere',     label:'Croisière',          sub:'buffet permanent'},
-          ].map(o => vacCard('vac-heberg', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- REPAS -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🍽️ Organisation des repas</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
-          ${[
-            {id:'buffet',      label:'Buffet',         sub:'hôtel ou croisière'},
-            {id:'fait_maison', label:'Fait maison',    sub:'cuisine sur place'},
-            {id:'restaurant',  label:'Restaurant',     sub:'tous les repas'},
-            {id:'mixte',       label:'Mixte',          sub:'combinaison libre'},
-          ].map(o => vacCard('vac-repas', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- TYPE DE VACANCES (multi-sélection) -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px">🏖️ Type de vacances</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Sélection multiple possible</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          ${[
-            {id:'plage',      label:'🏖️ Plage'},
-            {id:'montagne',   label:'🏔️ Montagne'},
-            {id:'randonnee',  label:'🥾 Randonnée'},
-            {id:'city_trip',  label:'🏙️ City trip'},
-            {id:'culturel',   label:'🏛️ Culturel'},
-            {id:'croisiere_type', label:'🚢 Croisière'},
-            {id:'ski',        label:'⛷️ Ski'},
-            {id:'camping',    label:'⛺ Camping'},
-          ].map(o => `<label style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;user-select:none" id="vac-type-lbl-${o.id}">
-            <input type="checkbox" id="vac-type-${o.id}" onchange="updateVacTypeLabel('${o.id}')" style="display:none">
-            <span id="vac-type-dot-${o.id}" style="width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:all .15s"></span>
-            ${o.label}
-          </label>`).join('')}
-        </div>
-      </div>
-
-      <!-- ACTIVITÉ -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">⚡ Niveau d'activité</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
-          ${[
-            {id:'farniente',  label:'Farniente',       sub:'plage/piscine/repos'},
-            {id:'modere',     label:'Actif modéré',    sub:'balades, visites'},
-            {id:'sportif',    label:'Sportif',         sub:'randos, vélo, natation'},
-          ].map(o => vacCard('vac-activite', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- ACCÈS SPORT -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🏋️ Accès sport</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
-          ${[
-            {id:'aucun',      label:'Aucun',           sub:'poids de corps seul'},
-            {id:'piscine',    label:'Piscine',         sub:'natation possible'},
-            {id:'salle_hotel',label:'Salle hôtel',     sub:'équipement basique'},
-            {id:'plein_air',  label:'Plein air',       sub:'course, vélo, rando'},
-            {id:'tout',       label:'Tout équipé',     sub:'salle complète'},
-          ].map(o => vacCard('vac-sport', o.id, o.label, o.sub)).join('')}
-        </div>
-      </div>
-
-      <!-- OBJECTIF + ALCOOL -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
-          <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🎯 Objectif</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${[
-              {id:'maintenir',  label:'Maintenir'},
-              {id:'leger_plus', label:'Accepter +1-2 kg'},
-              {id:'continuer',  label:'Continuer la perte'},
-            ].map(o => vacCard('vac-objectif', o.id, o.label, '')).join('')}
-          </div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
-          <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🍷 Alcool</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${[
-              {id:'aucun',       label:'Aucun'},
-              {id:'occasionnel', label:'Occasionnel'},
-              {id:'regulier',    label:'Régulier'},
-            ].map(o => vacCard('vac-alcool', o.id, o.label, '')).join('')}
-          </div>
-        </div>
-      </div>
-
-      <!-- DESTINATION -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">
-        <div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:10px">📍 Destination (optionnel)</div>
-        <input type="text" id="vac-destination" placeholder="Ex: Grèce, Maroc, New York, Alpes..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:14px">
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">Permet d'adapter les conseils cuisine locale, options kasher, hydratation selon le climat</div>
-      </div>
-
-      <button onclick="generateVacationPlan()" style="width:100%;padding:12px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:15px">🌴 Générer mon plan vacances</button>
-
-      <div id="vacation-plan-result" style="margin-top:20px"></div>
-
-    </div>
+  <div style="padding:32px 40px;max-width:680px" id="vacation-main-content">
+    <!-- Rendered by renderVacationSection() -->
   </div>
 </section>
+
+<!-- PARAMÈTRES -->
+<section class="section" id="section-settings" style="padding:0">
 
 <!-- PARAMÈTRES -->
   <div class="page-header">
@@ -3749,7 +3605,7 @@ function showSection(name, el, fromBurger) {
   if (name==='perf') { updatePerfForm(); renderPerf(); }
   if (name==='dashboard') renderDashboard();
   if (name==='bloodtest') renderBloodTest();
-  if (name==='vacation') restoreVacConfig();
+  if (name==='vacation') { renderVacationSection(); restoreVacConfig(); }
   if (name==='settings') { loadSettings(); renderNotifPreview(); }
   if (name==='journal') renderJournal();
   if (name==='forme') { renderFormeHistory(); updateFormeScore(); document.getElementById('forme-date-label').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }
@@ -5759,6 +5615,163 @@ setInterval(checkForUpdate, 1800000);
 // ============================================================
 
 function vacCard(group, id, label, sub) {
+  return '<div onclick="selectVacCard(\'' + group + '\',\'' + id + '\')" id="' + group + '-' + id + '" ' +
+    'style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s">' +
+    '<div style="font-size:13px;font-weight:500">' + label + '</div>' +
+    (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + sub + '</div>' : '') +
+  '</div>';
+}
+
+function renderVacationSection() {
+  const cont = document.getElementById('vacation-main-content');
+  if (!cont) return;
+
+  const VAC_GROUPS = [
+    {
+      id:'vac-duree', icon:'📅', title:'Durée', grid:true,
+      options:[
+        {id:'weekend', label:'Week-end', sub:'2-3 jours'},
+        {id:'courte',  label:'Court séjour', sub:'4-7 jours'},
+        {id:'moyenne', label:'Vacances', sub:'1-2 semaines'},
+        {id:'longue',  label:'Long séjour', sub:'3 semaines+'},
+      ]
+    },
+    {
+      id:'vac-contexte', icon:'🧭', title:'Contexte', grid:true,
+      options:[
+        {id:'detente',    label:'Vacances détente',  sub:'repos prioritaire'},
+        {id:'famille',    label:'Famille',           sub:'repas partagés'},
+        {id:'seminaire',  label:'Séminaire',         sub:'pro + social'},
+        {id:'voyage_pro', label:'Voyage pro',        sub:'restaurants seul'},
+      ]
+    },
+    {
+      id:'vac-heberg', icon:'🏨', title:'Hébergement', grid:true,
+      options:[
+        {id:'hotel_buffet',    label:'Hôtel buffet',       sub:'petit-déj inclus'},
+        {id:'hotel_sans',      label:'Hôtel sans buffet',  sub:'à la carte'},
+        {id:'appart_perso',    label:'Appartement perso',  sub:'cuisine complète'},
+        {id:'location',        label:'Location Airbnb',    sub:'cuisine basique'},
+        {id:'famille_heberge', label:'Chez famille/amis',  sub:'repas partagés'},
+        {id:'croisiere',       label:'Croisière',          sub:'buffet permanent'},
+      ]
+    },
+    {
+      id:'vac-repas', icon:'🍽️', title:'Organisation des repas', grid:true,
+      options:[
+        {id:'buffet',      label:'Buffet',         sub:'hôtel ou croisière'},
+        {id:'fait_maison', label:'Fait maison',    sub:'cuisine sur place'},
+        {id:'restaurant',  label:'Restaurant',     sub:'tous les repas'},
+        {id:'mixte',       label:'Mixte',          sub:'combinaison libre'},
+      ]
+    },
+    {
+      id:'vac-activite', icon:'⚡', title:'Niveau d\'activité', grid:true,
+      options:[
+        {id:'farniente',  label:'Farniente',     sub:'plage/piscine/repos'},
+        {id:'modere',     label:'Actif modéré',  sub:'balades, visites'},
+        {id:'sportif',    label:'Sportif',       sub:'randos, vélo, natation'},
+      ]
+    },
+    {
+      id:'vac-sport', icon:'🏋️', title:'Accès sport', grid:true,
+      options:[
+        {id:'aucun',       label:'Aucun',          sub:'poids de corps seul'},
+        {id:'piscine',     label:'Piscine',        sub:'natation possible'},
+        {id:'salle_hotel', label:'Salle hôtel',    sub:'équipement basique'},
+        {id:'plein_air',   label:'Plein air',      sub:'course, vélo, rando'},
+        {id:'tout',        label:'Tout équipé',    sub:'salle complète'},
+      ]
+    },
+  ];
+
+  const objectifOptions = [
+    {id:'maintenir',  label:'Maintenir le poids'},
+    {id:'leger_plus', label:'Accepter +1-2 kg'},
+    {id:'continuer',  label:'Continuer la perte'},
+  ];
+  const alcoolOptions = [
+    {id:'aucun',       label:'Aucun'},
+    {id:'occasionnel', label:'Occasionnel'},
+    {id:'regulier',    label:'Régulier'},
+  ];
+  const typeOptions = [
+    {id:'plage',         label:'🏖️ Plage'},
+    {id:'montagne',      label:'🏔️ Montagne'},
+    {id:'randonnee',     label:'🥾 Randonnée'},
+    {id:'city_trip',     label:'🏙️ City trip'},
+    {id:'culturel',      label:'🏛️ Culturel'},
+    {id:'croisiere_type',label:'🚢 Croisière'},
+    {id:'ski',           label:'⛷️ Ski'},
+    {id:'camping',       label:'⛺ Camping'},
+  ];
+
+  let html =
+    '<div style="background:var(--bg2);border:1px solid var(--accent)44;border-radius:var(--r2);padding:20px;margin-bottom:20px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+        '<div><div style="font-family:var(--font-head);font-size:15px;font-weight:700">Mode vacances</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:2px">Active les conseils adaptés à ton contexte</div></div>' +
+        '<label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">' +
+          '<input type="checkbox" id="vacation-toggle" onchange="toggleVacationMode()" style="opacity:0;width:0;height:0">' +
+          '<span id="vacation-slider" style="position:absolute;cursor:pointer;inset:0;background:var(--border2);border-radius:13px;transition:.3s"></span>' +
+        '</label>' +
+      '</div>' +
+    '</div>' +
+    '<div id="vacation-config" style="display:none">';
+
+  // Card groups
+  VAC_GROUPS.forEach(g => {
+    html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">' +
+      '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">' + g.icon + ' ' + g.title + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">' +
+      g.options.map(o => vacCard(g.id, o.id, o.label, o.sub)).join('') +
+      '</div></div>';
+  });
+
+  // Type vacances (multi)
+  html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px">' +
+    '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px">🏖️ Type de vacances</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Sélection multiple possible</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+    typeOptions.map(o =>
+      '<label style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;user-select:none" id="vac-type-lbl-' + o.id + '">' +
+        '<input type="checkbox" id="vac-type-' + o.id + '" onchange="updateVacTypeLabel(\'' + o.id + '\')" style="display:none">' +
+        '<span id="vac-type-dot-' + o.id + '" style="width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:all .15s"></span>' +
+        o.label +
+      '</label>'
+    ).join('') +
+    '</div></div>';
+
+  // Objectif + Alcool
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
+  html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">' +
+    '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🎯 Objectif</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+    objectifOptions.map(o => vacCard('vac-objectif', o.id, o.label, '')).join('') +
+    '</div></div>';
+  html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">' +
+    '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:14px">🍷 Alcool</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+    alcoolOptions.map(o => vacCard('vac-alcool', o.id, o.label, '')).join('') +
+    '</div></div>';
+  html += '</div>';
+
+  // Destination
+  html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:20px">' +
+    '<div style="font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:10px">📍 Destination (optionnel)</div>' +
+    '<input type="text" id="vac-destination" placeholder="Ex: Grèce, Maroc, New York, Alpes..." ' +
+    'style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:14px">' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:6px">Adapte les conseils cuisine locale, options kasher, hydratation selon le climat</div>' +
+    '</div>';
+
+  html += '<button onclick="generateVacationPlan()" style="width:100%;padding:12px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:15px">🌴 Générer mon plan vacances</button>';
+  html += '<div id="vacation-plan-result" style="margin-top:20px"></div>';
+  html += '</div>'; // close vacation-config
+
+  cont.innerHTML = html;
+}
+
+function showToast(msg) {
   return '<div onclick="selectVacCard(\'' + group + '\',\'' + id + '\')" id="' + group + '-' + id + '" ' +
     'style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s">' +
     '<div style="font-size:13px;font-weight:500">' + label + '</div>' +
