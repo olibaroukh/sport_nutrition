@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.06.25-8">
+<meta name="app-version" content="2026.06.25-11">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -939,7 +939,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
       <div id="import-status" style="margin-top:8px;font-size:12px;color:var(--muted);font-family:var(--font-mono)"></div>
     </div>
 
-    <!-- GUIDE DÉPLACEMENT ISRAËL -->
+    <!-- SEMAINE DE RECHARGE -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">🔄 Semaine de recharge</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">Active si tu es en plateau depuis 2-3 semaines. Augmente les glucides les jours de sport de +250 kcal pour relancer le métabolisme. À utiliser 1 semaine sur 4-5.</div>
+      <div style="padding:10px 14px;background:var(--bg3);border-radius:var(--r);display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🔄</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">Mode recharge actif</div>
+          <div style="font-size:11px;color:var(--muted)">+250 kcal glucides les jours de sport · Déficit maintenu les jours de repos</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0">
+          <input type="checkbox" id="recharge-toggle" onchange="toggleRechargeMode()" style="opacity:0;width:0;height:0">
+          <span id="recharge-slider" style="position:absolute;cursor:pointer;inset:0;background:var(--border2);border-radius:12px;transition:.3s"></span>
+        </label>
+      </div>
+    </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">✈️ Guide déplacement — Israël</div>
       <div style="margin-bottom:14px;padding:12px 14px;background:var(--bg3);border-radius:var(--r);display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -1260,19 +1275,26 @@ function calcTDEE(p) { return Math.round(calcBMR(p) * parseFloat(p.activity)); }
 function getDayTargets(p) {
   const cfg = OBJ_CONFIG[p.objective] || OBJ_CONFIG.seche;
   const tdee = calcTDEE(p);
-  const deficit = (cfg.defMin + cfg.defMax) / 2;
+  const rechargeMode = localStorage.getItem('rechargeMode') === '1';
+
+  // Recharge week: reduce deficit on sport days (+250 kcal in carbs)
+  const deficit = rechargeMode
+    ? Math.max(0, (cfg.defMin + cfg.defMax) / 2 - 250)
+    : (cfg.defMin + cfg.defMax) / 2;
+
   const sportKcal = Math.round(tdee - deficit);
-  const restKcal  = Math.round(sportKcal * 0.88);
+  const restKcal  = Math.round(sportKcal * (rechargeMode ? 0.92 : 0.88));
   const doubleSportKcal = Math.round(sportKcal * 1.08);
 
-  const protBase = Math.round(p.weight * cfg.protFactor);
-  const carbSport = Math.round(p.weight * 1.5 * cfg.carbFactor);
-  const carbRest  = Math.round(p.weight * 0.8 * cfg.carbFactor);
+  const protBase   = Math.round(p.weight * cfg.protFactor);
+  const carbBoost  = rechargeMode ? 1.2 : 1.0; // +20% carbs on sport days during recharge
+  const carbSport  = Math.round(p.weight * 1.5 * cfg.carbFactor * carbBoost);
+  const carbRest   = Math.round(p.weight * 0.8 * cfg.carbFactor);
   const carbDouble = Math.round(p.weight * 2.0 * cfg.carbFactor);
   const fat = Math.round(p.weight * 0.7 * cfg.fatFactor);
 
   return {
-    sport:  { kcal:sportKcal,  p:protBase, g:carbSport,  l:fat },
+    sport:  { kcal:sportKcal,  p:protBase, g:carbSport,  l:fat, recharge:rechargeMode },
     rest:   { kcal:restKcal,   p:Math.round(protBase*0.9), g:carbRest, l:Math.round(fat*0.85) },
     double: { kcal:doubleSportKcal, p:Math.round(protBase*1.05), g:carbDouble, l:fat },
   };
@@ -1483,6 +1505,10 @@ function generateDay(dayKey, profile, targets, foods, training) {
   const age      = parseInt(profile.age) || 40;
   const isVege   = ['vegetarien','vegan'].includes(profile.diet);
 
+  const rechargeMode = localStorage.getItem('rechargeMode') === '1';
+  const rechargeNote = rechargeMode && isSport
+    ? '\n🔄 Semaine de recharge : +250 kcal en glucides ce jour — riz brun ou flocons augmentés. Signal métabolique anti-plateau.'
+    : '';
   const drinkLabels = {
     'cafe':'cafe noir', 'cafe-lait':'cafe au lait', 'the-vert':'the vert',
     'the-noir':'the noir', 'the-blanc':'the blanc', 'infusion':'tisane', 'rien':'eau'
@@ -2362,7 +2388,21 @@ function renderPlan() {
   if (!CURRENT_PLAN) return;
   const israelMode = localStorage.getItem('israelMode') === '1';
 
-  // Show/hide Israel banner
+  // Recharge banner
+  let rechargeBanner = document.getElementById('recharge-plan-banner');
+  if (!rechargeBanner) {
+    rechargeBanner = document.createElement('div');
+    rechargeBanner.id = 'recharge-plan-banner';
+    rechargeBanner.style.cssText = 'display:none;padding:10px 16px;background:rgba(240,200,110,.1);border:1px solid var(--warn)44;border-radius:var(--r);margin-bottom:10px;font-size:13px;color:var(--warn)';
+    const tabs = document.querySelector('.day-tabs');
+    if (tabs) tabs.parentNode.insertBefore(rechargeBanner, tabs);
+  }
+  if (localStorage.getItem('rechargeMode') === '1') {
+    rechargeBanner.style.display = 'block';
+    rechargeBanner.innerHTML = '🔄 <strong>Semaine de recharge active</strong> — Glucides augmentés les jours de sport · Déficit maintenu les jours de repos · 1 semaine seulement';
+  } else {
+    rechargeBanner.style.display = 'none';
+  }
   let israelBanner = document.getElementById('israel-plan-banner');
   if (!israelBanner) {
     israelBanner = document.createElement('div');
@@ -2874,6 +2914,9 @@ function loadSettings() {
   const israelTog = document.getElementById('israel-mode-toggle');
   const israelSlider = document.getElementById('israel-mode-slider');
   if (israelTog) { const isOn = localStorage.getItem('israelMode')==='1'; israelTog.checked=isOn; if(israelSlider) israelSlider.style.background = isOn ? 'var(--accent)' : 'var(--border2)'; }
+  const rechargeTog = document.getElementById('recharge-toggle');
+  const rechargeSlider = document.getElementById('recharge-slider');
+  if (rechargeTog) { const isOn = localStorage.getItem('rechargeMode')==='1'; rechargeTog.checked=isOn; if(rechargeSlider) rechargeSlider.style.background = isOn ? 'var(--warn)' : 'var(--border2)'; }
   if (s.trainingtime) { const el=document.getElementById('p-trainingtime'); if(el) el.value=s.trainingtime; }
   fields.forEach(f => { const el=document.getElementById('p-'+f); if(el && s[f]) el.value=s[f]; });
   if (s.targetDate) document.getElementById('p-date').value = s.targetDate;
@@ -2927,8 +2970,11 @@ function calcAndApply() {
   const protMin = Math.round(weight*(cfg.protFactor-0.2)), protMax = Math.round(weight*cfg.protFactor);
 
   // Deadline check
+  const rechargeActive = localStorage.getItem('rechargeMode') === '1';
   let deadlineAlert = '';
-  if (s.targetDate && obj !== 'bienetre' && obj !== 'performance' && obj !== 'masse') {
+  if (rechargeActive) {
+    deadlineAlert = `<div class="alert-warn" style="margin-top:12px">🔄 <strong>Semaine de recharge active</strong> — Le déficit est réduit cette semaine intentionnellement. L'objectif de date reste valide sur la durée totale du programme.</div>`;
+  } else if (s.targetDate && obj !== 'bienetre' && obj !== 'performance' && obj !== 'masse') {
     const daysLeft = Math.max(1,(new Date(s.targetDate)-new Date())/864e5);
     const weeksLeft = daysLeft/7;
     const weightDiff = Math.abs(weight-goal);
@@ -5430,6 +5476,15 @@ function applyGeneratedProgram() {
 // ============================================================
 // EXPORT / IMPORT DONNÉES
 // ============================================================
+
+function toggleRechargeMode() {
+  const tog = document.getElementById('recharge-toggle');
+  const slider = document.getElementById('recharge-slider');
+  const on = tog && tog.checked;
+  localStorage.setItem('rechargeMode', on ? '1' : '0');
+  if (slider) slider.style.background = on ? 'var(--warn)' : 'var(--border2)';
+  showToast(on ? '🔄 Recharge activée — recalcule le plan ⚡' : 'Mode recharge désactivé');
+}
 
 function toggleIsraelMode() {
   const tog = document.getElementById('israel-mode-toggle');
