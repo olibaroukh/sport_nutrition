@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.07.26-1">
+<meta name="app-version" content="2026.08.27-1">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2187,7 +2187,7 @@ function generateSupplements(profile) {
   });
 
   // VITAMINE D3
-  const vitDDose = age >= 40 ? '3000-4000 UI/jour' : '1000-2000 UI/jour';
+  const vitDDose = age >= 40 ? '4000-5000 UI/jour (taux actuel insuffisant pour sportif intensif)' : '2000-3000 UI/jour';
   const vitDBlood = blood.vitD;
   const vitDNote = vitDBlood
     ? (parseFloat(vitDBlood) < 30 ? "Carence confirmee (" + vitDBlood + " ng/mL) — dose elevee justifiee. Recontroler dans 3 mois."
@@ -2272,7 +2272,7 @@ function generateSupplements(profile) {
   if (!isFemme && age35plus && (isLosing || obj === 'performance')) {
     suppls.push({
       emoji: '🌿', name: 'Ashwagandha KSM-66',
-      timing: 'Soir — avec le diner ou au coucher', dose: '300-600mg/jour',
+      timing: 'Soir — avec le diner ou au coucher', dose: '600mg/jour (dose maximale recommandee sur resultats)',
       role: "Reduit le cortisol chronique · Soutient la testosterone naturelle · Qualite du sommeil" + (age50plus ? " · Particulierement efficace apres 45 ans avec programme intensif" : ""),
       kasher: "Verifier excipients. Extraits standardises KSM-66 generalement sans probleme.",
       note: "Choisir extrait standardise KSM-66 uniquement. Prendre le soir. Resultats sur cortisol visibles en 4-6 semaines. Particulierement utile si ventre resistant malgre bon deficit.",
@@ -2290,6 +2290,32 @@ function generateSupplements(profile) {
         phase: 2
       });
     }
+  }
+
+  // TONGKAT ALI — SHBG reduction + free testosterone
+  if (!isFemme && age35plus && isLosing) {
+    const shbgBlood = blood.shbg;
+    suppls.push({
+      emoji: '🌿', name: 'Tongkat Ali (LJ100 ou Physta)',
+      timing: 'Soir — avec le diner', dose: '200-400mg/jour',
+      role: "Reduit la SHBG · Augmente la testosterone libre disponible · Synergie avec le Boron" + (age50plus ? " · Particulierement indique apres 50 ans avec SHBG elevee" : ""),
+      kasher: "Extrait vegetal pur — verifier excipients. LJ100 ou Physta = formes cliniquement etudiees.",
+      note: shbgBlood ? "Ton taux SHBG : " + shbgBlood + " nmol/L. " + (parseFloat(shbgBlood) > 35 ? "SHBG elevee confirmee — Tongkat Ali + Boron sont les cibles prioritaires." : "SHBG normale — maintenir en prevention.") : "Choisir LJ100 (Longjack 100:1) ou Physta uniquement — efficacite prouvee. Effet visible en 4-6 semaines.",
+      phase: 2
+    });
+  }
+
+  // BORON — reduces SHBG, increases free testosterone
+  if (!isFemme && age35plus) {
+    const shbgBlood = blood.shbg;
+    suppls.push({
+      emoji: '⚗️', name: 'Boron (bore)',
+      timing: 'Matin — avec le petit-dejeuner', dose: '6-10mg/jour',
+      role: "Reduit directement la SHBG · Augmente la testosterone libre et la vitamine D active · Soutient la sante osseuse",
+      kasher: "Bore glycinate ou citrate de bore. Verifier excipients.",
+      note: shbgBlood ? "Ton taux SHBG : " + shbgBlood + " nmol/L. " + (parseFloat(shbgBlood) > 35 ? "⚠️ SHBG elevee — Boron prioritaire. Effet mesurable sur la testosterone libre en 4-8 semaines." : "SHBG correcte — dose de maintenance 3-6mg suffisante.") : "Complement sous-estime : 6-10mg/jour reduit la SHBG de facon significative. Disponible chez Nutripure.",
+      phase: 2
+    });
   }
 
   // CURCUMINE + PIPERINE
@@ -4747,6 +4773,11 @@ const BLOOD_MARKERS = [
                 v < 13 ? "Bas — 15-20mg/j." :
                 v < 18 ? "Correct — 10-15mg/j en maintenance." : "Eleve — arreter la supplementation.",
    suppl: 'zinc'},
+  {key:'shbg', label:'SHBG (Sex Hormone Binding Globulin)', unit:'nmol/L', min:17, optimal:30, max:45,
+   advice: v => v > 45 ? "SHBG elevee — neutralise une part importante de la testosterone. Boron 6-10mg + Tongkat Ali prioritaires." :
+                v > 35 ? "SHBG moderement elevee — Boron 6mg/jour recommande." :
+                v >= 17 ? "SHBG correcte — pas d'action specifique." : "SHBG basse — pas de supplementation necessaire.",
+   suppl: 'shbg', lower_is_better: false},
   {key:'testosterone', label:'Testosterone totale', unit:'ng/mL', min:3, optimal:6, max:10,
    advice: v => v < 3 ? "Bas — consulter un endocrinologue. Ashwagandha + zinc + D3 + sport de force prioritaires." :
                 v < 5 ? "Limite inferieur — protocole hormonal (ashwagandha, zinc, D3) a maximiser." :
@@ -6035,6 +6066,14 @@ if (statSessions) statSessions.textContent = countTrainingSessions() + '/sem';
 // Restore notifications if previously enabled
 if (localStorage.getItem('notifEnabled') && 'Notification' in window && Notification.permission === 'granted') {
   scheduleNotifs();
+}
+// Pre-populate blood results from analysis 24/08/2026
+if (!localStorage.getItem('blood_results') || localStorage.getItem('blood_results') === '{}') {
+  localStorage.setItem('blood_results', JSON.stringify({
+    vitD: 48.3, testosterone: 7.06, shbg: 42.1,
+    ferritine: 150, crp: 1.5, glycemie: 99
+  }));
+  localStorage.setItem('last_blood_date', '2026-08-24');
 }
 scheduleMidnightReset();
 </script>
