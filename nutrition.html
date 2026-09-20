@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="2026.08.27-1">
+<meta name="app-version" content="2026.09.20-1">
 <link rel="apple-touch-icon" href="appli_nutrition.png">
 <link rel="icon" type="image/png" href="appli_nutrition.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -658,7 +658,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="page-title">Complémentation</div>
     <div class="page-desc">7j/7 · Adapté à l'entraînement intensif</div>
   </div>
-  <div style="padding:32px 40px"><div id="suppl-list"></div></div>
+  <div style="padding:16px 40px 0 40px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+      <span style="font-size:13px;color:var(--muted)">Prise du :</span>
+      <input type="date" id="suppl-date" style="font-family:var(--font-body);font-size:13px;padding:5px 10px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer" onchange="renderSuppl()">
+      <span id="suppl-taken-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+  </div>
+  <div style="padding:0 40px 32px 40px"><div id="suppl-list"></div></div>
 </section>
 
 <!-- JOURNAL ALIMENTAIRE -->
@@ -1005,6 +1012,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <strong style="color:var(--accent)">Objectif semaine Israël : maintenir, pas perdre.</strong> Si tu reviens au même poids c'est une victoire.
       </div>
     </div>
+    </div>
+
+    <!-- JARVIS / D1 INTEGRATION -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:8px">🤖 Jarvis — Synchronisation</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">
+        Envoie les coches repas et compléments vers la base Jarvis (Cloudflare D1) pour alimenter le bilan quotidien automatisé.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="param-field">
+          <label>Token de synchronisation (X-Store-Token)</label>
+          <input type="password" id="store-token-input" placeholder="Ton token secret..." style="font-family:var(--font-mono);font-size:12px">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button onclick="saveStoreToken()" style="padding:8px 18px;background:var(--accent);color:#0e0f0d;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:13px">Enregistrer</button>
+          <button onclick="testD1Connection()" style="padding:8px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px">Tester la connexion</button>
+          <span id="d1-test-result" style="font-size:12px;color:var(--muted);font-family:var(--font-mono)"></span>
+        </div>
+        <div id="d1-token-status" style="font-size:12px;color:var(--muted);font-family:var(--font-mono)"></div>
+      </div>
     </div>
 
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px" id="notif-block">
@@ -2693,9 +2720,42 @@ function closeModal(e) {
   if (!e || e.target === document.getElementById('modal')) document.getElementById('modal').classList.remove('open');
 }
 
+// ---- SUPPLEMENT TRACKING ----
+function getSupplKey(date) { return 'suppl_' + date; }
+function getSupplState(date) { return JSON.parse(localStorage.getItem(getSupplKey(date)) || '{}'); }
+
+function toggleSupplCheck(complName, date) {
+  const state = getSupplState(date);
+  state[complName] = !state[complName];
+  localStorage.setItem(getSupplKey(date), JSON.stringify(state));
+  // D1 double-write (fire-and-forget)
+  logNutritionToD1('supplement', complName, date, state[complName] ? 1 : 0);
+  renderSuppl();
+}
+
+function logNutritionToD1(type, name, date, checked) {
+  const WORKER_URL = 'https://bilan-passage.olibaroukh.workers.dev';
+  const token = localStorage.getItem('store_token') || '';
+  if (!token) return;
+  fetch(WORKER_URL + '/nutrition-log', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'X-Store-Token': token},
+    body: JSON.stringify({type, name, date, checked})
+  }).catch(function() {});
+}
+
 function renderSuppl() {
   const container = document.getElementById('suppl-list');
   if (!container) return;
+
+  // Init date picker to today if not set
+  const dateEl = document.getElementById('suppl-date');
+  if (dateEl && !dateEl.value) {
+    dateEl.value = new Date().toISOString().split('T')[0];
+  }
+  const today = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+  const state = getSupplState(today);
+
   const SUPPLS = generateSupplements(getProfile());
   const byPhase = {1:[], 2:[], 3:[]};
   SUPPLS.forEach(s => (byPhase[s.phase||1]).push(s));
@@ -2706,14 +2766,20 @@ function renderSuppl() {
     3: {label:'Phase 3 — Optionnel · Sur bilan sanguin', color:'var(--warn)', note:'A envisager uniquement apres prise de sang et resultats.'},
   };
 
-  const renderCard = s => {
+  const renderCard = function(s) {
     const phaseColor = s.phase === 2 ? 'var(--info)' : s.phase === 3 ? 'var(--warn)' : 'var(--accent)';
-    return '<div class="meal-card" style="margin-bottom:10px">' +
-      '<div class="meal-header" style="cursor:default">' +
+    const taken = !!state[s.name];
+    const safeDate = today.replace(/-/g, '');
+    const safeName = s.name.replace(/'/g, '\'').replace(/"/g, '&quot;');
+    return '<div class="meal-card" style="margin-bottom:10px;' + (taken ? 'opacity:0.7;border-color:var(--accent)44' : '') + '">' +
+      '<div class="meal-header" onclick="toggleSupplCheck(\'' + safeName + '\',\'' + today + '\')" style="cursor:pointer">' +
         '<span style="font-size:20px">' + s.emoji + '</span>' +
         '<div style="flex:1">' +
-          '<div class="meal-name">' + s.name + '</div>' +
+          '<div class="meal-name" style="' + (taken ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' + s.name + '</div>' +
           '<div style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">' + s.timing + ' · ' + s.dose + '</div>' +
+        '</div>' +
+        '<div style="width:22px;height:22px;border-radius:50%;border:2px solid ' + (taken ? 'var(--accent)' : 'var(--border2)') + ';background:' + (taken ? 'var(--accent)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+          (taken ? '<svg width="12" height="12" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
         '</div>' +
       '</div>' +
       '<div class="meal-body" style="display:block">' +
@@ -2732,6 +2798,15 @@ function renderSuppl() {
     '</div>' +
     byPhase[ph].map(renderCard).join('');
   }).join('');
+
+  // Update taken count
+  const totalSuppl = SUPPLS.filter(s => s.phase <= 2).length;
+  const takenCount = SUPPLS.filter(s => s.phase <= 2 && state[s.name]).length;
+  const countEl = document.getElementById('suppl-taken-count');
+  if (countEl) {
+    countEl.textContent = takenCount + ' / ' + totalSuppl + ' pris aujourd\'hui';
+    countEl.style.color = takenCount === totalSuppl ? 'var(--accent)' : 'var(--muted)';
+  }
 
   // Blood test reminder
   const profile = getProfile();
@@ -2955,6 +3030,52 @@ function selectObj(el) {
   document.getElementById('p-objective').value = el.dataset.val;
 }
 
+// ---- JARVIS / D1 TOKEN ----
+function saveStoreToken() {
+  const el = document.getElementById('store-token-input');
+  if (!el) return;
+  const val = el.value.trim();
+  if (val) {
+    localStorage.setItem('store_token', val);
+    el.value = '';
+    showToast('Token sauvegarde ✓');
+  }
+  updateD1TokenStatus();
+}
+
+function updateD1TokenStatus() {
+  const token = localStorage.getItem('store_token') || '';
+  const el = document.getElementById('d1-token-status');
+  if (!el) return;
+  if (token) {
+    el.textContent = 'Token configure (' + token.substring(0,4) + '••••)';
+    el.style.color = 'var(--accent)';
+  } else {
+    el.textContent = 'Aucun token — les coches ne se synchronisent pas.';
+    el.style.color = 'var(--muted)';
+  }
+}
+
+function testD1Connection() {
+  const token = localStorage.getItem('store_token') || '';
+  const el = document.getElementById('d1-test-result');
+  if (!el) return;
+  if (!token) { el.textContent = 'Aucun token configure.'; el.style.color='var(--warn)'; return; }
+  el.textContent = 'Test en cours...';
+  el.style.color = 'var(--muted)';
+  const WORKER_URL = 'https://bilan-passage.olibaroukh.workers.dev';
+  fetch(WORKER_URL + '/nutrition-log/ping', {
+    method: 'GET',
+    headers: {'X-Store-Token': token}
+  }).then(function(r) {
+    if (r.ok) { el.textContent = 'OK — connexion etablie'; el.style.color='var(--accent)'; }
+    else { el.textContent = 'Erreur ' + r.status; el.style.color='var(--danger)'; }
+  }).catch(function(e) {
+    el.textContent = 'Erreur reseau: ' + e.message;
+    el.style.color = 'var(--danger)';
+  });
+}
+
 function loadSettings() {
   const s = getProfile();
   const fields = ['sex','age','height','weight','goal','sessions','activity','diet','sport','stress','sleep','constraints','drink'];
@@ -2973,6 +3094,7 @@ function loadSettings() {
     const card = document.querySelector(`.obj-card[data-val="${s.objective}"]`);
     if (card) { card.classList.add('selected'); document.getElementById('p-objective').value = s.objective; }
   }
+  updateD1TokenStatus();
 }
 
 function readFormSettings() {
@@ -3187,6 +3309,8 @@ function toggleJournalMeal(date, i) {
   const saved = JSON.parse(localStorage.getItem(getJournalKey(date)) || '{"eaten":{},"free":[]}');
   saved.eaten[i] = !saved.eaten[i];
   localStorage.setItem(getJournalKey(date), JSON.stringify(saved));
+  // D1 double-write (fire-and-forget)
+  logNutritionToD1('meal', String(i), date, saved.eaten[i] ? 1 : 0);
   renderJournal();
 }
 
