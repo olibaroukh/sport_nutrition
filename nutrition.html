@@ -2734,7 +2734,7 @@ function toggleSupplCheck(complName, date) {
 }
 
 function logNutritionToD1(type, name, date, checked) {
-  const WORKER_URL = 'https://zimbra-relay.oli-baroukh.workers.dev';
+  const WORKER_URL = 'https://jarvis.oli-baroukh.workers.dev';
   const token = localStorage.getItem('store_token') || '';
   if (!token) return;
   fetch(WORKER_URL + '/nutrition-log', {
@@ -3063,7 +3063,7 @@ function testD1Connection() {
   if (!token) { el.textContent = 'Aucun token configure.'; el.style.color='var(--warn)'; return; }
   el.textContent = 'Test en cours...';
   el.style.color = 'var(--muted)';
-  const WORKER_URL = 'https://zimbra-relay.oli-baroukh.workers.dev';
+  const WORKER_URL = 'https://jarvis.oli-baroukh.workers.dev';
   fetch(WORKER_URL + '/nutrition-log/ping', {
     method: 'GET',
     headers: {'X-Store-Token': token}
